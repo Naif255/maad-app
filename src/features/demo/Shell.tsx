@@ -109,6 +109,8 @@ function Director() {
   const source = useStore((s) => s.scanSource)
   const setSource = useStore((s) => s.setScanSource)
   const offset = useStore((s) => s.clockOffset)
+  const hideNearby = useStore((s) => s.hideNearby)
+  const setHideNearby = useStore((s) => s.setHideNearby)
   const [flash, setFlash] = useState(false)
   const idx = storyIndex(loc.pathname)
 
@@ -171,6 +173,13 @@ function Director() {
             </button>
           ))}
         </div>
+        <button
+          onClick={() => setHideNearby(!hideNearby)}
+          className={cx('grid h-9 w-9 place-items-center rounded-xl', hideNearby ? 'bg-copper text-white' : 'bg-white/5 text-white/60 hover:text-white')}
+          title="محاكاة: ما فيه طلبات قريبة"
+        >
+          <Icon name="bell" size={16} />
+        </button>
         <button onClick={() => advance(48)} className="flex h-9 items-center gap-1.5 rounded-xl bg-white/5 px-3 text-xs font-semibold text-white/70 hover:text-white" title="قدّم الوقت 48 ساعة">
           <Icon name="forward" size={14} />
           48 ساعة

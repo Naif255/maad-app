@@ -50,3 +50,13 @@ One line of reasoning per decision. Newest at the bottom of each phase.
 - Synthetic scene keeps hangers inside the central crop so no detection lands off screen on a phone-shaped viewport.
 - The impact "kg diverted" counter shows one decimal, so a single return visibly moves it.
 - Mood board lives in-app at `#/brand` and uses the real tokens and components.
+
+## Phase 2
+
+- Heuristic detector is validated against synthetic ground truth in e2e (≥75% recall). Plastic hangers are rejected by the thickness/fill shape filter and never counted.
+- Camera path is tested with Chromium's fake media device. A camera failure automatically falls back to the demo video with a short copper notice, so the demo never dead-ends.
+- With `?record=1`, the scanner can export the current run as `sample.json` (keyframed tracks plus criteria). Run the heuristic once on the real sample video, export, and drop the JSON next to the video; from then on the video replays identically.
+- Live camera hint asks users to lay hangers flat on plain fabric, which matches what the heuristic detector (and most models) need.
+- Scanner HUD overlays are click-through, so hangers under the gradient can still be tapped for their breakdown.
+- Director bell toggle simulates "no nearby requests" to show the notify-me empty state on demand.
+- Routing copy for a usable-only laundry reuses the "box not accepting right now" note, which stays true in both cases.

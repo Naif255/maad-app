@@ -14,6 +14,7 @@ import { haptic } from './hooks'
 export function Scanner() {
   const [params] = useSearchParams()
   const forId = params.get('for') ?? undefined
+  const record = params.get('record') === '1'
   const nav = useNavigate()
   const source = useStore((s) => s.scanSource)
   const batches = useStore((s) => s.batches)
@@ -119,7 +120,9 @@ export function Scanner() {
       : phase === 'locked'
         ? 'تم التحقق'
         : confirmed === 0
-          ? 'وجّه الكاميرا على العلاقات'
+          ? state?.sourceKind === 'camera'
+            ? 'فرّش العلاقات على قماش سادة ووجّه الكاميرا'
+            : 'وجّه الكاميرا على العلاقات'
           : quietRatio > 0.45
             ? 'ثبّت شوي… بنقفل العدد'
             : 'نعدّ… حرّك الجوال على مهلك'
@@ -144,7 +147,7 @@ export function Scanner() {
 
       <Boxes tracks={tracks} state={state} size={size} locked={phase === 'locked'} onPick={open} />
 
-      <div className="absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-black/70 to-transparent px-4 pb-10 pt-12">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-black/70 to-transparent px-4 pb-10 pt-12 [&_button]:pointer-events-auto">
         <div className="flex items-center justify-between">
           <button onClick={() => nav(-1)} className="grid h-10 w-10 place-items-center rounded-full bg-white/10 backdrop-blur" aria-label="إغلاق">
             <Icon name="close" size={20} />
@@ -168,7 +171,7 @@ export function Scanner() {
         )}
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-3 bg-gradient-to-t from-black/80 to-transparent px-5 pb-10 pt-16">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-3 bg-gradient-to-t from-black/80 to-transparent px-5 pb-10 pt-16 [&_button]:pointer-events-auto">
         <AnimatePresence mode="wait">
           <motion.div
             key={hint}
@@ -214,6 +217,21 @@ export function Scanner() {
                 </div>
               </div>
             </div>
+            {record && (
+              <button
+                onClick={() => {
+                  const data = engineRef.current?.annotation()
+                  if (!data) return
+                  const a = document.createElement('a')
+                  a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }))
+                  a.download = 'sample.json'
+                  a.click()
+                }}
+                className="mt-4 w-full rounded-xl bg-white/5 py-2 text-xs font-semibold text-white/60"
+              >
+                تصدير التعليقات (sample.json)
+              </button>
+            )}
             <div className="mt-5 grid grid-cols-[1fr_1.4fr] gap-2.5">
               <Button variant="soft" className="border-white/10 bg-white/5 text-white hover:bg-white/10" icon="plus" onClick={() => setAttempt((a) => a + 1)}>
                 دفعة ثانية

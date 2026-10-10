@@ -1,5 +1,6 @@
 import { appConfig } from '@/config/app'
 import type { HangerVerdict } from '@/domain/types'
+import type { Annotation } from './detectors/scripted'
 import { Tracker } from './tracker'
 import type { FrameSource, HangerDetector, ScanState } from './types'
 
@@ -22,6 +23,7 @@ export class ScanEngine {
   private state: ScanState
   private held = false
   private stopped = false
+  private history = new Map<string, [number, number, number, number, number][]>()
 
   constructor(private readonly o: EngineOptions) {
     this.tracker = new Tracker(appConfig.scan.confirmFrames, o.seed, o.idPrefix)
@@ -62,6 +64,12 @@ export class ScanEngine {
       if (this.stopped || this.state.phase !== 'scanning') return
       const now = performance.now()
       const { views, newlyConfirmed } = this.tracker.update(dets, now)
+      for (const v of views) {
+        if (!v.visible) continue
+        const h = this.history.get(v.id) ?? []
+        h.push([Math.round(frame.time), +v.bbox.x.toFixed(4), +v.bbox.y.toFixed(4), +v.bbox.w.toFixed(4), +v.bbox.h.toFixed(4)])
+        this.history.set(v.id, h)
+      }
       if (newlyConfirmed.length) {
         this.lastConfirmAt = now
         newlyConfirmed.forEach((v) => this.o.onConfirm?.(v))
@@ -90,6 +98,12 @@ export class ScanEngine {
     const verdicts = this.tracker.verdicts()
     this.emit({ phase: 'locked', tracks: this.state.tracks.filter((t) => t.confirmed) })
     this.o.onLock?.(verdicts)
+  }
+
+  annotation(): Annotation {
+    return {
+      tracks: this.tracker.verdicts().map((v) => ({ key: v.id, criteria: v.criteria, keyframes: this.history.get(v.id) ?? [] })),
+    }
   }
 
   hold(v: boolean) {

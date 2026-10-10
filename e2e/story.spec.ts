@@ -24,6 +24,21 @@ test('demo story runs end to end', async ({ page }) => {
   await expect(page.getByText('تم التحقق').last()).toBeVisible({ timeout: 30_000 })
   await page.waitForTimeout(600)
   await snap(page, '04-verified')
+  await expect(page.getByRole('button', { name: 'كمّل للفرز' })).toBeVisible({ timeout: 10_000 })
+  const boxes = page.locator('button.absolute.left-0.top-0')
+  let target = -1
+  for (let i = 0; i < (await boxes.count()); i++) {
+    const b = await boxes.nth(i).boundingBox()
+    if (b && b.y + b.height / 2 > 380 && b.y + b.height / 2 < 640) target = i
+  }
+  if (target >= 0) {
+    await boxes.nth(target).click()
+    await expect(page.getByText('استقامة الإطار')).toBeVisible()
+    await page.waitForTimeout(900)
+    await snap(page, '04b-criteria')
+    await page.locator('[class*="bg-ink/40"]').first().click({ position: { x: 40, y: 40 } })
+    await expect(page.getByText('استقامة الإطار')).toBeHidden()
+  }
   await page.getByRole('button', { name: 'كمّل للفرز' }).click({ timeout: 10_000 })
   await expect(page.getByText('الكرتون الأخضر').first()).toBeVisible()
   await page.waitForTimeout(500)
