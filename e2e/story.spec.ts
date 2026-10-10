@@ -10,9 +10,9 @@ test('demo story runs end to end', async ({ page }) => {
   page.on('pageerror', (e) => errors.push(e.message))
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()))
 
-  await page.goto('/')
+  await page.goto('/?demo=1')
   await page.evaluate(() => localStorage.clear())
-  await page.goto('/#/c')
+  await page.goto('/?demo=1#/c')
   await expect(page.getByText('مغاسل قريبة تحتاج علاقات')).toBeVisible()
   await snap(page, '01-home')
 
@@ -47,7 +47,6 @@ test('demo story runs end to end', async ({ page }) => {
   await expect(page.getByText('6 علاقات للتدوير')).toBeVisible()
 
   await page.getByRole('button', { name: 'احجز التسليم' }).click()
-  await page.getByRole('button', { name: 'أرسل رمز التحقق' }).click({ timeout: 10_000 })
   await expect(page.getByText('كيف بتسلّمها؟')).toBeVisible({ timeout: 10_000 })
   await snap(page, '06-method')
   await page.getByRole('button', { name: 'ثبّت الحجز' }).click()
@@ -59,7 +58,7 @@ test('demo story runs end to end', async ({ page }) => {
   await page.getByRole('button', { name: 'المغسلة' }).first().click()
   await expect(page.getByText('لوحة المغسلة')).toBeVisible()
   await snap(page, '08-laundry')
-  await page.getByRole('button', { name: 'امسح رمز العميل' }).click()
+  await page.getByRole('link', { name: 'امسح' }).click()
   await page.getByRole('button', { name: new RegExp(code) }).click()
   await snap(page, '09-dropoff')
   await page.getByRole('button', { name: 'استلمت' }).click()
@@ -93,7 +92,7 @@ test('demo story runs end to end', async ({ page }) => {
   await page.waitForTimeout(1500)
   await snap(page, '16-impact')
 
-  await page.goto('/#/brand')
+  await page.goto('/?demo=1#/brand')
   await page.waitForTimeout(1600)
   await snap(page, '17-brand')
 

@@ -1,4 +1,4 @@
-import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { HashRouter, Route, Routes } from 'react-router-dom'
 import { Brand } from './features/brand/Brand'
 import { ConsumerLayout } from './features/consumer/ConsumerLayout'
 import { History } from './features/consumer/History'
@@ -11,6 +11,7 @@ import { Scanner } from './features/consumer/Scanner'
 import { Summary } from './features/consumer/Summary'
 import { Wallet } from './features/consumer/Wallet'
 import { Shell } from './features/demo/Shell'
+import { RootRedirect, Start } from './features/start/Start'
 import { CertificateView, Certificates } from './features/factory/Certificates'
 import { FactoryLayout, FactoryMap, FactorySettings, RoundView, Rounds } from './features/factory/Factory'
 import { ImpactPage } from './features/impact/ImpactLive'
@@ -26,7 +27,8 @@ export default function App() {
     <HashRouter>
       <Shell>
         <Routes>
-          <Route path="/" element={<Navigate to="/c" replace />} />
+          <Route path="/" element={<RootRedirect />} />
+          <Route path="/start" element={<Start />} />
           <Route path="/c" element={<ConsumerLayout />}>
             <Route index element={<Home />} />
             <Route path="request/:id" element={<RequestDetail />} />
@@ -56,7 +58,7 @@ export default function App() {
           </Route>
           <Route path="/impact" element={<ImpactPage />} />
           <Route path="/brand" element={<Brand />} />
-          <Route path="*" element={<Navigate to="/c" replace />} />
+          <Route path="*" element={<RootRedirect />} />
         </Routes>
       </Shell>
     </HashRouter>

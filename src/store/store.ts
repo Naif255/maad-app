@@ -1,13 +1,30 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { appConfig } from '@/config/app'
-import { buildSeed } from '@/data/seed'
+import { buildSeed, DEMO_USER_ID } from '@/data/seed'
 import { statsFrom } from '@/domain/scoring'
 import * as svc from '@/domain/services'
 import type { Db, DeliveryMethod, Reward, ScanBatch } from '@/domain/types'
 
 export type Role = 'consumer' | 'laundry' | 'factory' | 'impact'
 export type ScanSource = 'demo' | 'camera'
+
+export type Account = 'consumer' | 'laundry' | 'factory'
+
+const DEMO_KEY = 'maad-demo'
+
+function initialDemo() {
+  if (typeof window === 'undefined') return false
+  try {
+    if (new URLSearchParams(window.location.search).has('demo')) {
+      sessionStorage.setItem(DEMO_KEY, '1')
+      return true
+    }
+    return sessionStorage.getItem(DEMO_KEY) === '1'
+  } catch {
+    return false
+  }
+}
 
 export interface Celebration {
   groupId: string
@@ -17,7 +34,9 @@ export interface Celebration {
 interface State {
   db: Db
   clockOffset: number
-  userId?: string
+  userId: string
+  account?: Account
+  demo: boolean
   batches: ScanBatch[]
   scanRequestId?: string
   scanSource: ScanSource
@@ -26,8 +45,8 @@ interface State {
   resetCount: number
   now: () => number
   reset: () => void
-  signIn: (phone: string) => string
-  signOut: () => void
+  setAccount: (a?: Account) => void
+  toggleDemo: () => void
   addBatch: (b: ScanBatch) => void
   clearScan: () => void
   setScanRequest: (id?: string) => void
@@ -61,6 +80,8 @@ export const useStore = create<State>()(
       return {
         db: buildSeed(seedNow()),
         clockOffset: 0,
+        userId: DEMO_USER_ID,
+        demo: initialDemo(),
         batches: [],
         scanSource: 'demo',
         hideNearby: false,
@@ -70,46 +91,30 @@ export const useStore = create<State>()(
           set((s) => ({
             db: buildSeed(seedNow()),
             clockOffset: 0,
-            userId: undefined,
+            userId: DEMO_USER_ID,
             batches: [],
             scanRequestId: undefined,
             celebration: undefined,
             hideNearby: false,
             resetCount: s.resetCount + 1,
           })),
-        signIn: (phone) => {
-          const clean = phone.replace(/\D/g, '')
-          let id = get().db.users.find((u) => u.phone === clean)?.id
-          if (!id) {
-            id = mutate((db, now) => {
-              const uid = svc.nextId(db, 'u')
-              db.users.push({
-                id: uid,
-                name: '',
-                phone: clean,
-                neighborhoodId: 'n-safra',
-                points: 0,
-                lifetimeUsable: 0,
-                lifetimeDamaged: 0,
-                donatedPoints: 0,
-                carry: {},
-                notifyNearby: false,
-                createdAt: now,
-              })
-              return uid
-            })
+        setAccount: (account) => set({ account }),
+        toggleDemo: () => {
+          const demo = !get().demo
+          try {
+            if (demo) sessionStorage.setItem(DEMO_KEY, '1')
+            else sessionStorage.removeItem(DEMO_KEY)
+          } catch {
+            return set({ demo })
           }
-          set({ userId: id })
-          return id
+          set({ demo })
         },
-        signOut: () => set({ userId: undefined }),
         addBatch: (b) => set((s) => ({ batches: [...s.batches, b] })),
         clearScan: () => set({ batches: [], scanRequestId: undefined }),
         setScanRequest: (id) => set({ scanRequestId: id }),
         setScanSource: (scanSource) => set({ scanSource }),
         book: (plan, method) => {
           const { userId, batches } = get()
-          if (!userId) throw new Error('auth')
           const stats = statsFrom(batches.flatMap((b) => b.hangers))
           const groupId = mutate((db, now) => svc.createBookings(db, userId, plan, method, stats, now))
           set({ batches: [], scanRequestId: undefined })
@@ -159,6 +164,7 @@ export const useStore = create<State>()(
         db: s.db,
         clockOffset: s.clockOffset,
         userId: s.userId,
+        account: s.account,
         batches: s.batches,
         scanRequestId: s.scanRequestId,
         scanSource: s.scanSource,

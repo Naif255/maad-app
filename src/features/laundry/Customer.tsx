@@ -130,8 +130,8 @@ function Received({ usable, damaged, onBack }: { usable: number; damaged: number
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }} className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
           <div className="text-xs text-white/50">صندوق مَعاد</div>
           <div className="num mt-1 text-2xl font-semibold text-steel-100">+{num(damaged)}</div>
-          <div className="num text-xs text-white/40" dir="ltr">
-            {num(l.boxCount)} / {economics.boxCapacityHangers}
+          <div className="text-xs text-white/40">
+            <span className="num">{num(l.boxCount)}</span> من <span className="num">{economics.boxCapacityHangers}</span>
           </div>
         </motion.div>
       </div>

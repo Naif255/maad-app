@@ -67,8 +67,7 @@ export function ScanQr() {
       </div>
       <div className="mt-6 flex-1 rounded-t-[28px] bg-paper px-4 pb-8 pt-5 text-ink">
         <div className="mb-3 flex items-center justify-between px-1">
-          <div className="font-display font-semibold">مسح سريع للعرض</div>
-          <span className="text-xs text-mute">بدل الكاميرا</span>
+          <div className="font-display font-semibold">أو اختر من التسليمات المحجوزة</div>
         </div>
         <div className="space-y-2">
           {users.map((uid) => {

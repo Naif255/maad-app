@@ -17,7 +17,7 @@ npm run build
 
 The full presenter run sheet is in [DEMO.md](DEMO.md).
 
-Open on a laptop at ≥1100px wide for stage mode: director bar, phone, and live impact panel.
+The app opens on an account picker (فرد، مغسلة، مصنع) and remembers the last choice. Add `?demo=1` (or press Shift+D) for demo controls; on a laptop ≥1100px wide that shows stage mode: director bar, phone, and live impact panel.
 
 - Roles: Consumer, Laundry, Factory, Impact (top bar, or Alt+1..4)
 - Story chips 1–7 jump to each step
@@ -25,7 +25,7 @@ Open on a laptop at ≥1100px wide for stage mode: director bar, phone, and live
 - "Demo video / Camera" toggles the scan source
 - "48h" advances the clock to show booking expiry
 - Brand mood board: `#/brand`
-- Phone + laptop: run `npm run dev:https` and open `https://<lan-ip>:5173/?sync=1#/c` on both. State syncs over the dev server's websocket (dev mode only)
+- Phone + laptop: run `npm run dev:https` and open `https://<lan-ip>:5173/?sync=1&demo=1#/c` on both. State syncs over the dev server's websocket (dev mode only)
 
 ## Scan module
 

@@ -21,18 +21,12 @@ export function Home() {
 
   return (
     <div className="pb-10">
-      <header className="flex items-center justify-between px-5 pb-2 pt-12">
-        <div>
-          <div className="text-sm text-mute">{me?.name ? `هلا ${me.name}` : 'هلا والله'}</div>
-          <button className="mt-0.5 flex items-center gap-1 font-display text-lg font-semibold">
-            <Icon name="pin" size={17} className="text-loop" />
-            {home.name}، بريدة
-          </button>
+      <header className="px-5 pb-2" style={{ paddingTop: 'calc(var(--status, 0px) + 28px)' }}>
+        <div className="text-sm text-mute">{me?.name ? `هلا ${me.name}` : 'هلا والله'}</div>
+        <div className="mt-0.5 flex items-center gap-1 font-display text-lg font-semibold">
+          <Icon name="pin" size={17} className="text-loop" />
+          {home.name}، بريدة
         </div>
-        <button className="relative grid h-11 w-11 place-items-center rounded-full bg-paper shadow-card" aria-label="التنبيهات">
-          <Icon name="bell" size={20} />
-          <span className="absolute right-3 top-2.5 h-2 w-2 rounded-full bg-copper ring-2 ring-paper" />
-        </button>
       </header>
 
       <div className="px-4">
@@ -53,10 +47,22 @@ export function Home() {
               <br />
               مكدّسة عندك؟
             </h1>
-            <p className="mt-2 max-w-[15rem] text-sm leading-6 text-white/65">وجّه الكاميرا عليها، ونقول لك وش يرجع للمغسلة ووش يصير حديد من جديد.</p>
-            <Button className="mt-5 w-full" icon="scan" onClick={() => nav('/c/scan')}>
-              عندي علاقات
-            </Button>
+            <p className="mt-2 max-w-[16rem] text-sm leading-6 text-white/65">وجّه الكاميرا عليها، ونقول لك وش يرجع للمغسلة ووش يصير حديد من جديد.</p>
+            <div className="mt-5 flex items-center gap-2 text-[13px] font-semibold text-white/80">
+              {(
+                [
+                  ['scan', 'افحص'],
+                  ['box', 'افرز'],
+                  ['gift', 'سلّم واكسب'],
+                ] as const
+              ).map(([icon, label], i) => (
+                <span key={label} className="flex items-center gap-2">
+                  {i > 0 && <span className="h-px w-4 bg-white/20" />}
+                  <Icon name={icon} size={16} className="text-loop" />
+                  {label}
+                </span>
+              ))}
+            </div>
           </div>
         </motion.div>
 
@@ -114,7 +120,14 @@ export function RequestCard({ v, i = 0, onClick }: { v: RequestView; i?: number;
           <WireProgress value={r.collected} reserved={v.reserved} max={r.target} />
           <div className="mt-2 flex items-center justify-between text-xs">
             <span className="text-mute">
-              <span className="num font-semibold text-ink">{num(r.collected)}</span> من <span className="num">{num(r.target)}</span> وصلت
+              <span className="num font-semibold text-ink">{num(r.collected)}</span> وصلت
+              {v.reserved > 0 && (
+                <>
+                  {' '}
+                  · <span className="num">{num(v.reserved)}</span> بالطريق
+                </>
+              )}{' '}
+              · من <span className="num">{num(r.target)}</span>
             </span>
             {!damagedOk && (
               <Pill tone="steel" className="h-5 text-[11px]">
@@ -131,9 +144,7 @@ export function RequestCard({ v, i = 0, onClick }: { v: RequestView; i?: number;
 function NotifyCard() {
   const me = useMe()
   const setNotify = useStore((s) => s.setNotify)
-  const userId = useStore((s) => s.userId)
   const on = me?.notifyNearby
-  const nav = useNavigate()
   return (
     <Card className="p-6 text-center">
       <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-sand-2 text-mute">
@@ -141,7 +152,7 @@ function NotifyCard() {
       </div>
       <div className="mt-3 font-display text-lg font-semibold">ما فيه طلبات قريبة الحين</div>
       <p className="mx-auto mt-1 max-w-[16rem] text-sm leading-6 text-mute">أول ما تحتاج مغسلة قريبة منك علاقات، نرسل لك تنبيه.</p>
-      <Button className="mt-4 w-full" variant={on ? 'soft' : 'primary'} icon={on ? 'check' : 'bell'} onClick={() => (userId ? setNotify(!on) : nav('/c/me?next=notify'))}>
+      <Button className="mt-4 w-full" variant={on ? 'soft' : 'primary'} icon={on ? 'check' : 'bell'} onClick={() => setNotify(!on)}>
         {on ? 'بننبهك أول ما يصير طلب' : 'نبّهني إذا مغسلة قريبة احتاجت'}
       </Button>
       <div className="mt-3 text-xs text-mute">تقدر تفحص علاقاتك الحين وتحفظ النتيجة لين يجي طلب</div>

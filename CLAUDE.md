@@ -15,7 +15,7 @@ Consumer
 - Usable hangers go in a green carton, damaged ones in a grey carton.
 - Delivery: drop off in person, or hand over with the next laundry order.
 - Receipt: booking details plus the user's single loyalty QR. Timeline: booked → awaiting drop-off → received → reward credited. Bookings expire after 48h and the quantity returns to the request.
-- Scanning works before sign-up. Sign-up is phone + OTP only, required at booking.
+- No login at all (owner decision, polish pass): the app opens on an account-type picker (consumer, laundry, factory, plus an impact link). The last account is remembered; each role's settings has "switch account".
 - No nearby requests: "notify me when a nearby laundry needs hangers".
 
 Rewards
@@ -54,6 +54,8 @@ Impact Dashboard: total hangers, kg steel diverted, laundry savings SAR, live ac
 - Domain logic is pure and lives in `src/domain`. UI never mutates state directly; it calls store actions that call domain services.
 - The scan module (`src/scan`) is behind the `HangerDetector` interface. Implementations: scripted (deterministic demo), heuristic (canvas CV), onnx (plug-in for the trained model).
 - The demo story must be deterministic. "Reset demo" restores seed data.
+- Product mode is the default: no demo wording in the UI, scanner uses the real camera. Demo controls (director bar, stage mode, recorded-video source, reset) appear only with `?demo=1` or Shift+D.
+- Numbers must agree across screens; every visible control must work.
 - Log every product/engineering decision in `DECISIONS.md` with one line of reasoning.
 
 ## Commands

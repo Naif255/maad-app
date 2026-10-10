@@ -6,7 +6,7 @@ import { ago, countdown, num, rewardRule, rewardTitle, sar } from '@/lib/format'
 import { useStore } from '@/store/store'
 import { BoxGauge } from '@/ui/BoxGauge'
 import { Icon } from '@/ui/Icon'
-import { Button, Card, cx, Odometer, Pill, SectionTitle, WireProgress } from '@/ui/kit'
+import { Card, cx, Odometer, Pill, SectionTitle, WireProgress } from '@/ui/kit'
 import { useTicker } from '../consumer/hooks'
 import { useLaundry } from './LaundryLayout'
 
@@ -26,7 +26,7 @@ export function LaundryDashboard() {
 
   return (
     <div className="pb-8">
-      <header className="flex items-center justify-between px-5 pb-3 pt-12">
+      <header className="flex items-center justify-between px-5 pb-3 pt-safe">
         <div>
           <div className="text-sm text-mute">لوحة المغسلة</div>
           <div className="font-display text-xl font-semibold">{l.name}</div>
@@ -44,7 +44,9 @@ export function LaundryDashboard() {
               <div className="text-xs font-semibold text-mute">صندوق مَعاد</div>
               <div className="mt-1 flex items-baseline gap-1">
                 <Odometer value={l.boxCount} className="text-3xl font-semibold" />
-                <span className="num text-sm text-mute" dir="ltr">/ {economics.boxCapacityHangers}</span>
+                <span className="text-sm text-mute">
+                  من <span className="num">{economics.boxCapacityHangers}</span>
+                </span>
               </div>
               <div className="mt-2 text-xs text-mute">قيمة تقديرية</div>
               <div className="flex items-baseline gap-1 text-copper-700">
@@ -98,16 +100,16 @@ export function LaundryDashboard() {
                     <span className="text-mute">· {ago(b.createdAt, now)}</span>
                   </div>
                 </div>
-                <div className="num text-[11px] text-mute">{countdown(b.expiresAt - now)}</div>
+                <div className="text-end">
+                  <div className="text-[10px] text-mute">ينتهي بعد</div>
+                  <div className="num text-[11px] font-semibold">{countdown(b.expiresAt - now)}</div>
+                </div>
               </Card>
             ))}
           </div>
         ) : (
           <div className="rounded-2xl bg-paper p-4 text-center text-sm text-mute">ما فيه تسليمات معلقة</div>
         )}
-        <Button className="mt-1 w-full" icon="qr" onClick={() => nav('/l/scan')}>
-          امسح رمز العميل
-        </Button>
 
         <SectionTitle>طلبك الحالي</SectionTitle>
         {req ? (

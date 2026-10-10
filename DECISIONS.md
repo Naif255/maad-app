@@ -78,3 +78,21 @@ One line of reasoning per decision. Newest at the bottom of each phase.
 - The first device to join keeps its state; a newcomer adopts the existing state through a hello/reply handshake.
 - A recorded sample video locks only after the clip ends (`busy()` until `ended`), so the real-video run is deterministic together with `sample.json`.
 - `DEMO.md` is the presenter run sheet: setup, the timed 2-minute story, extra moments, failure recovery, and how to record the sample video.
+
+## Polish pass (product feel)
+
+- No login anywhere, per the owner. Phone + OTP and the sign-in gates are removed; the consumer account is the seeded resident. CLAUDE.md is updated to match.
+- New entry screen `#/start`: pick فرد / مغسلة / مصنع plus a small link to the impact dashboard. `/` redirects to the last account (persisted). Visiting any role route also updates the remembered account.
+- "Switch account" sits in each role's settings (consumer حسابي, laundry الإعدادات, factory الإعدادات). The factory "السعر" tab is renamed الإعدادات since it now holds more than the price.
+- Demo mode is off by default. `?demo=1` or Shift+D turns it on (kept for the browser session). Only demo mode shows the director bar, stage mode, the recorded-video scan source, reset and +48h. On desktop, product mode shows the app in a centered phone-width column; the impact page is full width.
+- Product-mode scanner always uses the real camera. If the camera fails it shows a retry screen; it never silently swaps in a recorded video. The silent fallback stays in demo mode only, with neutral wording.
+- Removed the mobile role handle, the "فيديو العرض" label and the scanner batch chip (the previous-batches line already covers multiple batches).
+- Removed controls that did nothing (home bell, home location "button") and duplicate primary actions: home hero "عندي علاقات" (same as the center scan tab), laundry "امسح رمز العميل" (same as the center tab), wallet "سجل رجّعاتي" (same as the history tab). The hero's how-it-works steps are now plain text, not tile-shaped like buttons.
+- The laundry QR screen's manual list is labelled "أو اختر من التسليمات المحجوزة", a real fallback when a code won't scan.
+- Points now reconcile: the seeded balance equals the sum of points from past returns (732), with 0 donated. The wallet shows the balance; history shows "نقطة كسبتها" (lifetime earned), so they only differ after a donation, by exactly the donated amount.
+- Request cards show "140 وصلت · 12 بالطريق · من 200" next to "تحتاج 48", so the numbers visibly add up.
+- Box counts read "395 من 400" instead of an LTR "/ 400" that flipped in RTL; pending drop-off countdowns are labelled "ينتهي بعد".
+- Storage key bumped to `maad-db-v2`, so old saved states (with old points) don't leak into the new seed.
+- Scanner HUD is a single compact row (close plus both counters), and the gradients are lighter, so far less of the frame (and fewer hangers) sits under overlays.
+- iPhone home screen: `apple-mobile-web-app-capable`, `black-translucent` status bar, 180px apple-touch-icon, 192/512 PNG manifest icons (rendered from the logo SVG by `scripts/icons.mjs`), explicit `start_url`/`scope`, portrait. All headers pad with the safe-area inset (`pt-safe` utility, TopBar, scanner, entry, impact), so nothing sits under the notch in standalone mode.
+- Impact dashboard: the logo (or a back button on phones) returns to `/`. The hero label is shortened and the ticker time sits under the text, so lines don't wrap awkwardly.

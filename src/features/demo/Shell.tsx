@@ -37,14 +37,42 @@ export function roleOf(path: string): Role {
 export function Shell({ children }: { children: ReactNode }) {
   const wide = useMedia('(min-width: 1100px)')
   const loc = useLocation()
-  const full = loc.pathname.startsWith('/impact') || loc.pathname.startsWith('/brand')
+  const demo = useStore((s) => s.demo)
+  const toggleDemo = useStore((s) => s.toggleDemo)
+  const setAccount = useStore((s) => s.setAccount)
+  const path = loc.pathname
+  const full = path.startsWith('/impact') || path.startsWith('/brand')
   const stage = new URLSearchParams(loc.search).get('stage') !== '0'
+
+  useEffect(() => {
+    if (path.startsWith('/c')) setAccount('consumer')
+    else if (path.startsWith('/l')) setAccount('laundry')
+    else if (path.startsWith('/f')) setAccount('factory')
+  }, [path, setAccount])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement)?.closest('input,textarea')) return
+      if (e.shiftKey && e.code === 'KeyD') toggleDemo()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [toggleDemo])
 
   if (!wide) {
     return (
       <div className="relative h-dvh w-full overflow-hidden bg-sand" style={{ ['--status' as string]: 'env(safe-area-inset-top, 0px)' }}>
         <Frame>{children}</Frame>
-        {!full && <RoleFab />}
+      </div>
+    )
+  }
+  if (!demo) {
+    if (full) return <div className="relative h-dvh overflow-y-auto bg-ink"><Frame>{children}</Frame></div>
+    return (
+      <div className="flex h-dvh justify-center bg-[#E4DDD0]">
+        <div className="relative h-full w-full max-w-[440px] overflow-hidden bg-sand shadow-[0_0_80px_-20px_rgba(15,23,20,0.35)]">
+          <Frame>{children}</Frame>
+        </div>
       </div>
     )
   }
@@ -202,57 +230,6 @@ function Director() {
           <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }} className="absolute inset-x-0 bottom-0 h-0.5 origin-right bg-loop" />
         )}
       </AnimatePresence>
-    </div>
-  )
-}
-
-function RoleFab() {
-  const [open, setOpen] = useState(false)
-  const nav = useNavigate()
-  const reset = useStore((s) => s.reset)
-  const loc = useLocation()
-  const role = roleOf(loc.pathname)
-  return (
-    <div dir="ltr" className="absolute left-0 top-[42%] z-[70] flex items-start">
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            dir="rtl"
-            className="order-2 ml-2 w-44 overflow-hidden rounded-2xl bg-ink p-1.5 text-white shadow-lift"
-          >
-            {ROLES.map((r) => (
-              <button
-                key={r.id}
-                onClick={() => {
-                  nav(r.path)
-                  setOpen(false)
-                }}
-                className={cx('flex h-10 w-full items-center gap-2 rounded-xl px-3 text-sm font-semibold', role === r.id ? 'bg-white text-ink' : 'text-white/75')}
-              >
-                <Icon name={r.icon} size={16} />
-                {r.label}
-              </button>
-            ))}
-            <button
-              onClick={() => {
-                reset()
-                nav('/c')
-                setOpen(false)
-              }}
-              className="mt-1 flex h-10 w-full items-center gap-2 rounded-xl px-3 text-sm font-semibold text-copper-100"
-            >
-              <Icon name="replay" size={16} />
-              إعادة العرض
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <button onClick={() => setOpen((o) => !o)} className="order-1 grid h-12 w-6 place-items-center rounded-r-xl bg-ink/70 text-white/90 shadow-lift backdrop-blur" aria-label="تبديل الدور">
-        <Icon name={open ? 'close' : 'layers'} size={14} />
-      </button>
     </div>
   )
 }

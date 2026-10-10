@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
+import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { appConfig } from '@/config/app'
 import { byId, impactTotals } from '@/domain/services'
@@ -24,19 +25,23 @@ export function ImpactLive({ compact = false }: { compact?: boolean }) {
   const db = useStore((s) => s.db)
   const now = useTicker(1000)
   const t = useMemo(() => impactTotals(db), [db])
-  const partners = db.laundries.length
   const homes = useMemo(() => new Set(db.bookings.filter((b) => b.status === 'credited').map((b) => b.userId)).size, [db])
 
   return (
-    <div className={cx('relative min-h-full overflow-hidden bg-ink text-white', compact ? 'p-6' : 'p-8 lg:p-10')}>
+    <div className={cx('relative min-h-full overflow-hidden bg-ink text-white', compact ? 'p-6' : 'p-5 md:p-8 lg:p-10')} style={compact ? undefined : { paddingTop: 'calc(var(--status, 0px) + 24px)' }}>
       <div className="pointer-events-none absolute inset-0 opacity-60 grain" />
       <div className="relative">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             {!compact && (
-              <span className="hidden md:block">
-                <Logo size={30} tone="light" />
-              </span>
+              <Link to="/" aria-label="مَعاد" className="shrink-0">
+                <span className="hidden md:block">
+                  <Logo size={30} tone="light" />
+                </span>
+                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white/5 ring-1 ring-white/10 md:hidden">
+                  <Icon name="back" size={20} />
+                </span>
+              </Link>
             )}
             <div>
               <div className={cx('font-display font-semibold', compact ? 'text-xl' : 'text-xl md:text-2xl')}>أثر مَعاد في بريدة</div>
@@ -56,7 +61,7 @@ export function ImpactLive({ compact = false }: { compact?: boolean }) {
           <Hero label="علاقة رجعت للدورة" value={t.total} tone="loop" big />
           <Hero label="كجم حديد ما راح للمردم" value={Math.round(t.kg * 10) / 10} tone="steel" format={num1} />
           <Hero label="ريال وفّرتها المغاسل" value={Math.round(t.savings)} tone="copper" />
-          {!compact && <Hero label={`بيت شارك · ${partners} مغاسل شريكة`} value={homes} tone="ink" />}
+          {!compact && <Hero label="بيت شارك" value={homes} tone="ink" />}
         </div>
 
         <div className={cx('mt-3 grid gap-3', compact ? 'grid-cols-2' : 'grid-cols-1 lg:grid-cols-3')}>
@@ -138,8 +143,10 @@ function Ticker({ db, now, rows }: { db: Db; now: number; rows: number }) {
               <span className={cx('grid h-8 w-8 shrink-0 place-items-center rounded-xl', m.tone === 'loop' ? 'bg-loop/20 text-loop-100' : m.tone === 'copper' ? 'bg-copper/20 text-copper-100' : 'bg-white/10 text-steel-100')}>
                 <Icon name={m.icon} size={16} />
               </span>
-              <span className="line-clamp-2 min-w-0 flex-1 text-sm">{m.text}</span>
-              <span className="shrink-0 text-[11px] text-white/40">{ago(a.at, now)}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm leading-6">{m.text}</span>
+                <span className="block text-[11px] text-white/40">{ago(a.at, now)}</span>
+              </span>
             </motion.div>
           )
         })}

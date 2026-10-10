@@ -1,6 +1,5 @@
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from 'motion/react'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { economics, kgFromHangers } from '@/config/economics'
 import { byId, nextTier, tierOf } from '@/domain/services'
 import type { Coupon } from '@/domain/types'
@@ -11,7 +10,6 @@ import { Button, Card, cx, Odometer, Pill, QR, SectionTitle, Sheet } from '@/ui/
 import { LogoMark } from '@/ui/Logo'
 import { haptic, useMe } from './hooks'
 import { loyaltyQrValue } from './Receipt'
-import { SignInGate } from './SignInGate'
 
 const TIER_BG = {
   bronze: 'linear-gradient(135deg, #8A5A34 0%, #C98F5E 40%, #7A4B28 70%, #B07A4C 100%)',
@@ -24,11 +22,10 @@ export function Wallet() {
   const db = useStore((s) => s.db)
   const now = useStore((s) => s.now)()
   const donate = useStore((s) => s.donate)
-  const nav = useNavigate()
   const [coupon, setCoupon] = useState<Coupon>()
   const [qr, setQr] = useState(false)
   const [donated, setDonated] = useState(false)
-  if (!me) return <SignInGate title="محفظتك" text="كوبوناتك ونقاطك وبطاقة الولاء كلها هنا." />
+  if (!me) return null
   const tier = tierOf(me)
   const next = nextTier(me)
   const total = me.lifetimeUsable + me.lifetimeDamaged
@@ -38,7 +35,7 @@ export function Wallet() {
 
   return (
     <div className="pb-10">
-      <header className="px-5 pb-3 pt-12">
+      <header className="px-5 pb-3 pt-safe">
         <div className="font-display text-2xl font-semibold">المحفظة</div>
       </header>
       <div className="px-4">
@@ -125,13 +122,6 @@ export function Wallet() {
           </AnimatePresence>
         </Card>
 
-        <button onClick={() => nav('/c/history')} className="mt-6 flex w-full items-center justify-between rounded-2xl bg-paper px-4 py-4 text-sm font-semibold ring-1 ring-ink/5">
-          <span className="flex items-center gap-2">
-            <Icon name="history" size={18} />
-            سجل رجّعاتي
-          </span>
-          <Icon name="chevron" size={18} className="text-mute" />
-        </button>
       </div>
 
       <Sheet open={!!coupon} onClose={() => setCoupon(undefined)}>

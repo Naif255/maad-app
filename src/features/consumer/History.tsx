@@ -8,7 +8,6 @@ import { date, kg, num } from '@/lib/format'
 import { useStore } from '@/store/store'
 import { Card, cx, LaundryBadge, Pill } from '@/ui/kit'
 import { useMe } from './hooks'
-import { SignInGate } from './SignInGate'
 
 const STATUS: Record<Booking['status'], { label: string; tone: 'loop' | 'copper' | 'mute' | 'rust' }> = {
   awaiting: { label: 'بانتظار التسليم', tone: 'copper' },
@@ -22,14 +21,14 @@ export function History() {
   const db = useStore((s) => s.db)
   const nav = useNavigate()
   const list = useMemo(() => (me ? userBookings(db, me.id) : []), [db, me])
-  if (!me) return <SignInGate title="رجّعاتك" text="كل إرجاع سويته بتاريخه ومغسلته ونقاطه." />
+  if (!me) return null
   const done = list.filter((b) => b.status === 'credited')
   const total = done.reduce((a, b) => a + b.usable + b.damaged, 0)
   const pts = done.reduce((a, b) => a + b.points, 0)
 
   return (
     <div className="pb-10">
-      <header className="px-5 pb-2 pt-12">
+      <header className="px-5 pb-2 pt-safe">
         <div className="font-display text-2xl font-semibold">رجّعاتي</div>
       </header>
       <div className="mx-4 grid grid-cols-3 divide-x divide-x-reverse divide-ink/5 rounded-[22px] bg-ink py-4 text-center text-white">
@@ -43,7 +42,7 @@ export function History() {
         </div>
         <div>
           <div className="num text-2xl font-semibold text-copper-100">{num(pts)}</div>
-          <div className="text-[11px] text-white/55">نقطة</div>
+          <div className="text-[11px] text-white/55">نقطة كسبتها</div>
         </div>
       </div>
       <div className="mt-5 space-y-2.5 px-4">

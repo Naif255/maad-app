@@ -4,6 +4,7 @@ import { ago, date, hangers, num, sar } from '@/lib/format'
 import { useStore } from '@/store/store'
 import { Icon } from '@/ui/Icon'
 import { Card, cx, Pill, TopBar } from '@/ui/kit'
+import { SwitchAccount } from '@/ui/SwitchAccount'
 import { useLaundry } from './LaundryLayout'
 
 export function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
@@ -37,6 +38,7 @@ export function LaundrySettings() {
           <Row label="سعر الكيلو" value={`${sar(factory.pricePerKgSar)} ر.س`} />
           <Row label="الدفع" value="لكل مغسلة على حدة" />
         </Card>
+        <SwitchAccount />
       </div>
     </div>
   )

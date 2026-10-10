@@ -9,13 +9,14 @@ import { useStore } from '@/store/store'
 import { CityMap } from '@/ui/CityMap'
 import { Icon, type IconName } from '@/ui/Icon'
 import { Button, Card, cx, Pill, TopBar } from '@/ui/kit'
+import { SwitchAccount } from '@/ui/SwitchAccount'
 import { haptic, useTicker } from '../consumer/hooks'
 
 const TABS: { to: string; label: string; icon: IconName; end?: boolean }[] = [
   { to: '/f', label: 'الخريطة', icon: 'map', end: true },
   { to: '/f/rounds', label: 'الجولات', icon: 'truck' },
   { to: '/f/certs', label: 'الشهادات', icon: 'cert' },
-  { to: '/f/settings', label: 'السعر', icon: 'settings' },
+  { to: '/f/settings', label: 'الإعدادات', icon: 'settings' },
 ]
 
 export const useFactory = () => byId(useStore((s) => s.db).factories, DEMO_FACTORY_ID)!
@@ -86,7 +87,7 @@ export function FactoryMap() {
             <path d={`M${f.x - 11} ${f.y + 9}v-11l7 4v-4l7 4v-9h4v16z`} fill="#fff" />
           </g>
         </CityMap>
-        <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-steel-50 via-steel-50/70 to-transparent px-5 pb-8 pt-12">
+        <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-steel-50 via-steel-50/70 to-transparent px-5 pb-8 pt-safe">
           <div className="text-sm text-mute">{f.name}</div>
           <div className="font-display text-xl font-semibold">صناديق جاهزة للاستلام</div>
         </div>
@@ -357,8 +358,8 @@ export function FactorySettings() {
   const setPrice = useStore((s) => s.setPrice)
   return (
     <div className="pb-8">
-      <TopBar title="سعر الكيلو" />
-      <div className="px-4">
+      <TopBar title="الإعدادات" />
+      <div className="space-y-3 px-4">
         <Card className="p-6 text-center">
           <div className="text-sm text-mute">سعرك المعلن للمغاسل</div>
           <div className="mt-4 flex items-center justify-center gap-4">
@@ -373,6 +374,7 @@ export function FactorySettings() {
           <div className="mt-1 text-sm text-mute">ريال لكل كيلو</div>
           <div className="mt-5 rounded-2xl bg-steel-50 p-3 text-xs leading-5 text-steel-700">السعر يطبّق على كل الصناديق الجديدة، ويندفع لكل مغسلة حسب الوزن الفعلي وقت الاستلام.</div>
         </Card>
+        <SwitchAccount />
       </div>
     </div>
   )

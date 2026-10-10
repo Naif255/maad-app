@@ -17,7 +17,10 @@ export function Scanner() {
   const forId = params.get('for') ?? undefined
   const record = params.get('record') === '1'
   const nav = useNavigate()
-  const source = useStore((s) => s.scanSource)
+  const demo = useStore((s) => s.demo)
+  const chosen = useStore((s) => s.scanSource)
+  const source = demo ? chosen : 'camera'
+  const [failed, setFailed] = useState(false)
   const batches = useStore((s) => s.batches)
   const addBatch = useStore((s) => s.addBatch)
   const setScanRequest = useStore((s) => s.setScanRequest)
@@ -42,6 +45,7 @@ export function Scanner() {
     setState(undefined)
     setVerified(false)
     setDone(false)
+    setFailed(false)
     const index = useStore.getState().batches.length
     const mount = (p: Pipeline) => {
       host.replaceChildren(p.source.element)
@@ -80,9 +84,13 @@ export function Scanner() {
       } catch {
         engine?.stop()
         if (stopped) return
+        if (!demo) {
+          setFailed(true)
+          return
+        }
         p = await demoPipeline()
         if (stopped) return
-        setNote('ما قدرنا نفتح الكاميرا، شغّلنا فيديو العرض')
+        setNote('الكاميرا ما اشتغلت، كمّلنا بالفيديو المسجّل')
         engine = make(p)
         engineRef.current = engine
         mount(p)
@@ -96,7 +104,7 @@ export function Scanner() {
       engine?.stop()
       engineRef.current = undefined
     }
-  }, [attempt, source, addBatch])
+  }, [attempt, source, demo, addBatch])
 
   useEffect(() => {
     if (!note) return
@@ -150,38 +158,31 @@ export function Scanner() {
 
       <Boxes tracks={tracks} state={state} size={size} locked={phase === 'locked'} onPick={open} />
 
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-black/70 to-transparent px-4 pb-10 pt-12 [&_button]:pointer-events-auto">
-        <div className="flex items-center justify-between">
-          <button onClick={() => nav(-1)} className="grid h-10 w-10 place-items-center rounded-full bg-white/10 backdrop-blur" aria-label="إغلاق">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-black/60 to-transparent px-3 pb-6 [&_button]:pointer-events-auto" style={{ paddingTop: 'calc(var(--status, 0px) + 12px)' }}>
+        <div className="flex items-center gap-2">
+          <button onClick={() => nav(-1)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-black/40 backdrop-blur-md" aria-label="إغلاق">
             <Icon name="close" size={20} />
           </button>
-          <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold backdrop-blur">
-            <span className={cx('h-2 w-2 rounded-full', phase === 'scanning' ? 'animate-pulse bg-rust' : phase === 'locked' ? 'bg-loop' : 'bg-white/40')} />
-            {state?.sourceKind === 'camera' ? 'مباشر' : 'فيديو العرض'}
-            <span className="text-white/40">·</span>
-            الدفعة <span className="num">{batches.length + (verified ? 0 : 1)}</span>
+          <div className="flex min-w-0 flex-1 gap-1 rounded-full bg-black/40 p-1 backdrop-blur-md">
+            <Counter label="صالحة" value={usable} tone="loop" />
+            <Counter label="للتدوير" value={recyclable} tone="steel" />
           </div>
-          <div className="w-10" />
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-2.5">
-          <Counter label="صالحة" sub="ترجع للمغسلة" value={usable} tone="loop" />
-          <Counter label="للتدوير" sub="تروح لمصنع الحديد" value={recyclable} tone="steel" />
         </div>
         {prev.total > 0 && (
-          <div className="mt-2 text-center text-xs text-white/60">
+          <div className="mt-2 text-center text-xs text-white/70">
             + <span className="num">{num(prev.total)}</span> من الدفعات السابقة
           </div>
         )}
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-3 bg-gradient-to-t from-black/80 to-transparent px-5 pb-10 pt-16 [&_button]:pointer-events-auto">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-2 bg-gradient-to-t from-black/60 to-transparent px-5 pt-8" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 20px)' }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={hint}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
-            className="flex items-center gap-2.5 rounded-full bg-black/45 px-4 py-2.5 text-sm font-semibold backdrop-blur-md"
+            className={cx('flex items-center gap-2.5 rounded-full bg-black/45 px-4 py-2 text-sm font-semibold backdrop-blur-md', failed && 'hidden')}
           >
             {phase === 'scanning' && confirmed > 0 ? <LockRing ratio={quietRatio} /> : phase === 'starting' ? <Spinner /> : null}
             {hint}
@@ -194,7 +195,20 @@ export function Scanner() {
         )}
       </div>
 
-      <AnimatePresence>{note && <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-x-4 top-44 z-20 rounded-2xl bg-copper px-4 py-3 text-sm font-semibold">{note}</motion.div>}</AnimatePresence>
+      <AnimatePresence>{note && <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-x-4 top-24 z-20 rounded-2xl bg-copper px-4 py-3 text-sm font-semibold">{note}</motion.div>}</AnimatePresence>
+
+      {failed && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-ink px-8 text-center">
+          <div className="grid h-16 w-16 place-items-center rounded-3xl bg-white/10">
+            <Icon name="camera" size={30} />
+          </div>
+          <div className="mt-5 font-display text-xl font-semibold">ما قدرنا نفتح الكاميرا</div>
+          <p className="mt-2 text-sm leading-6 text-white/60">اسمح لمَعاد يستخدم الكاميرا من إعدادات المتصفح، وجرّب مرة ثانية.</p>
+          <Button className="mt-6 w-full" icon="replay" onClick={() => setAttempt((a) => a + 1)}>
+            حاول مرة ثانية
+          </Button>
+        </div>
+      )}
 
       <AnimatePresence>{verified && !done && <Verified usable={usable} recyclable={recyclable} />}</AnimatePresence>
 
@@ -269,17 +283,16 @@ function useSize(ref: React.RefObject<HTMLDivElement | null>) {
   return s
 }
 
-function Counter({ label, sub, value, tone }: { label: string; sub: string; value: number; tone: 'loop' | 'steel' }) {
+function Counter({ label, value, tone }: { label: string; value: number; tone: 'loop' | 'steel' }) {
   return (
-    <div className={cx('relative overflow-hidden rounded-2xl px-4 py-3 backdrop-blur-md', tone === 'loop' ? 'bg-loop/25 ring-1 ring-loop/40' : 'bg-white/10 ring-1 ring-white/15')}>
-      <div className="flex items-center gap-1.5 text-xs font-semibold">
-        <span className={cx('h-2 w-2 rounded-full', tone === 'loop' ? 'bg-loop' : 'bg-steel-300')} />
+    <div className={cx('flex min-w-0 flex-1 items-center justify-between gap-2 rounded-full px-3 py-1.5', tone === 'loop' ? 'bg-loop/35' : 'bg-white/10')}>
+      <span className="flex items-center gap-1.5 truncate text-xs font-semibold">
+        <span className={cx('h-2 w-2 shrink-0 rounded-full', tone === 'loop' ? 'bg-loop' : 'bg-steel-300')} />
         {label}
-      </div>
-      <motion.div key={value} initial={{ scale: 1.08 }} animate={{ scale: 1 }} className="origin-right">
-        <Odometer value={value} className="mt-1 text-[34px] font-semibold leading-none" />
-      </motion.div>
-      <div className="mt-1 text-[11px] text-white/55">{sub}</div>
+      </span>
+      <motion.span key={value} initial={{ scale: 1.15 }} animate={{ scale: 1 }}>
+        <Odometer value={value} className="text-xl font-semibold leading-none" />
+      </motion.span>
     </div>
   )
 }

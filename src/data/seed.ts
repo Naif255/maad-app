@@ -89,10 +89,10 @@ export function buildSeed(now: number = Date.now()): Db {
       name: 'ريم',
       phone: '0551234567',
       neighborhoodId: 'n-safra',
-      points: 690,
+      points: 0,
       lifetimeUsable: 0,
       lifetimeDamaged: 0,
-      donatedPoints: 1500,
+      donatedPoints: 0,
       carry: {},
       notifyNearby: false,
       createdAt: now - 80 * DAY,
@@ -192,6 +192,7 @@ export function buildSeed(now: number = Date.now()): Db {
     }
     demo.lifetimeUsable += h.u
     demo.lifetimeDamaged += h.d
+    demo.points += b.points
     bookings.push(b)
     activity.push({ id: id('a'), at, kind: 'return', neighborhoodId: demo.neighborhoodId, count: h.u + h.d, laundryId: h.l })
   }

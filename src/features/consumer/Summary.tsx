@@ -9,7 +9,6 @@ import { useStore } from '@/store/store'
 import { Carton } from '@/ui/Carton'
 import { Icon, type IconName } from '@/ui/Icon'
 import { Button, Card, cx, LaundryBadge, Pill, Sheet, TopBar } from '@/ui/kit'
-import { AuthSheet } from './AuthSheet'
 import { useHome } from './hooks'
 
 export function Summary() {
@@ -21,7 +20,6 @@ export function Summary() {
   const book = useStore((s) => s.book)
   const home = useHome()
   const nav = useNavigate()
-  const [auth, setAuth] = useState(false)
   const [method, setMethod] = useState(false)
 
   const all = batches.flatMap((b) => b.hangers)
@@ -44,7 +42,7 @@ export function Summary() {
   const coupons = plan.legs.reduce((acc, leg) => {
     const req = leg.requestId ? byId(db.requests, leg.requestId) : undefined
     if (!req) return acc
-    const carry = userId ? (byId(db.users, userId)?.carry[leg.laundryId] ?? 0) : 0
+    const carry = byId(db.users, userId)?.carry[leg.laundryId] ?? 0
     const n = Math.floor((carry + leg.usable) / req.reward.per)
     return n > 0 ? [...acc, { n, title: rewardTitle(req.reward) }] : acc
   }, [] as { n: number; title: string }[])
@@ -53,7 +51,6 @@ export function Summary() {
     plan.legs.reduce((a, l) => a + l.damaged, 0),
   )
 
-  const start = () => (userId ? setMethod(true) : setAuth(true))
   const confirm = (m: DeliveryMethod) => {
     const groupId = book(plan, m)
     nav(`/c/receipt/${groupId}`, { replace: true })
@@ -160,20 +157,11 @@ export function Summary() {
       </div>
 
       <div className="sticky bottom-0 z-20 bg-gradient-to-t from-sand via-sand to-transparent px-4 pb-6 pt-6">
-        <Button className="w-full" disabled={!plan.legs.length} onClick={start}>
+        <Button className="w-full" disabled={!plan.legs.length} onClick={() => setMethod(true)}>
           احجز التسليم
         </Button>
-        {!userId && <div className="mt-2 text-center text-xs text-mute">بنطلب رقم جوالك بس، ما يحتاج تسجيل</div>}
       </div>
 
-      <AuthSheet
-        open={auth}
-        onClose={() => setAuth(false)}
-        onDone={() => {
-          setAuth(false)
-          setTimeout(() => setMethod(true), 350)
-        }}
-      />
       <MethodSheet open={method} onClose={() => setMethod(false)} onPick={confirm} />
     </div>
   )

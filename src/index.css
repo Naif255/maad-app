@@ -144,3 +144,7 @@
     background-position: -200% 0;
   }
 }
+
+@utility pt-safe {
+  padding-top: calc(var(--status, 0px) + 28px);
+}

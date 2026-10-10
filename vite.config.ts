@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => ({
     ...(mode === 'https' ? [basicSsl()] : []),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'media/*'],
+      includeAssets: ['favicon.svg', 'icon-180.png', 'media/*'],
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,woff2,png,webp,mp3}'],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
@@ -42,7 +42,16 @@ export default defineConfig(({ mode }) => ({
         theme_color: '#0F1714',
         background_color: '#F6F2EA',
         display: 'standalone',
-        icons: [{ src: 'favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
+        id: '/',
+        start_url: '/',
+        scope: '/',
+        orientation: 'portrait',
+        icons: [
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: 'favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+        ],
       },
     }),
   ],
