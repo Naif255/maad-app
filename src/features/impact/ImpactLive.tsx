@@ -33,9 +33,13 @@ export function ImpactLive({ compact = false }: { compact?: boolean }) {
       <div className="relative">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {!compact && <Logo size={30} tone="light" />}
+            {!compact && (
+              <span className="hidden md:block">
+                <Logo size={30} tone="light" />
+              </span>
+            )}
             <div>
-              <div className={cx('font-display font-semibold', compact ? 'text-xl' : 'text-2xl')}>أثر مَعاد في بريدة</div>
+              <div className={cx('font-display font-semibold', compact ? 'text-xl' : 'text-xl md:text-2xl')}>أثر مَعاد في بريدة</div>
               <div className="text-sm text-white/50">كل علاقة ترجع تنحسب هنا لحظة بلحظة</div>
             </div>
           </div>
@@ -87,7 +91,7 @@ function Hero({ label, value, tone, big, format = num }: { label: string; value:
     <div className="relative overflow-hidden rounded-[22px] bg-ink-2 p-5 ring-1 ring-white/5">
       <div className={cx('absolute inset-y-5 start-0 w-1 rounded-e-full', accent)} />
       <motion.div key={value} initial={{ opacity: 0.6 }} animate={{ opacity: 1 }}>
-        <Odometer value={value} format={format} className={cx('font-semibold leading-none', big ? 'text-5xl' : 'text-4xl')} />
+        <Odometer value={value} format={format} className={cx('font-semibold leading-none', big ? 'text-4xl lg:text-5xl' : 'text-3xl lg:text-4xl')} />
       </motion.div>
       <div className="mt-2 text-sm text-white/55">{label}</div>
     </div>
@@ -134,7 +138,7 @@ function Ticker({ db, now, rows }: { db: Db; now: number; rows: number }) {
               <span className={cx('grid h-8 w-8 shrink-0 place-items-center rounded-xl', m.tone === 'loop' ? 'bg-loop/20 text-loop-100' : m.tone === 'copper' ? 'bg-copper/20 text-copper-100' : 'bg-white/10 text-steel-100')}>
                 <Icon name={m.icon} size={16} />
               </span>
-              <span className="min-w-0 flex-1 truncate text-sm">{m.text}</span>
+              <span className="line-clamp-2 min-w-0 flex-1 text-sm">{m.text}</span>
               <span className="shrink-0 text-[11px] text-white/40">{ago(a.at, now)}</span>
             </motion.div>
           )

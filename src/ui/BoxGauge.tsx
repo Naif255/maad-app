@@ -1,51 +1,41 @@
 import { motion } from 'motion/react'
-import { useMemo } from 'react'
+import { HANGER_PATH } from './Logo'
 
 export function BoxGauge({ ratio, size = 132, full }: { ratio: number; size?: number; full?: boolean }) {
   const r = Math.max(0, Math.min(1, ratio))
-  const wires = useMemo(
-    () =>
-      Array.from({ length: 26 }, (_, i) => ({
-        y: 96 - (i / 26) * 70,
-        x: 18 + ((i * 37) % 30),
-        rot: ((i * 53) % 40) - 20,
-        w: 34 + ((i * 17) % 18),
-      })),
-    [],
-  )
-  const level = 96 - r * 72
+  const top = 30
+  const bottom = 104
+  const level = bottom - r * (bottom - top)
+  const stroke = full ? '#D9822B' : '#0F1714'
   return (
     <svg width={size} height={size} viewBox="0 0 120 120">
       <defs>
-        <clipPath id="box-in">
-          <path d="M16 30h88v66a6 6 0 0 1-6 6H22a6 6 0 0 1-6-6z" />
+        <clipPath id="gauge-in">
+          <rect x="18" y={top} width="84" height={bottom - top} rx="8" />
         </clipPath>
-        <linearGradient id="steel-fill" x1="0" x2="0" y1="0" y2="1">
+        <linearGradient id="gauge-steel" x1="0" x2="1" y1="0" y2="1">
           <stop offset="0" stopColor="#C9D1D8" />
-          <stop offset="1" stopColor="#7D8A96" />
+          <stop offset="0.45" stopColor="#9AA6B1" />
+          <stop offset="1" stopColor="#6E7A85" />
         </linearGradient>
+        <pattern id="gauge-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+          <line x1="0" y1="0" x2="0" y2="7" stroke="rgba(255,255,255,0.28)" strokeWidth="1.4" />
+        </pattern>
       </defs>
-      <path d="M16 30h88v66a6 6 0 0 1-6 6H22a6 6 0 0 1-6-6z" fill="rgba(15,23,20,0.05)" />
-      <g clipPath="url(#box-in)">
-        <motion.rect x="16" width="88" height="80" fill="url(#steel-fill)" initial={false} animate={{ y: level }} transition={{ type: 'spring', stiffness: 50, damping: 14 }} />
-        {wires.map((w, i) => (
-          <motion.path
-            key={i}
-            d={`M${w.x} ${w.y} l${w.w / 2} -8 l${w.w / 2} 8 z`}
-            fill="none"
-            stroke="rgba(255,255,255,0.55)"
-            strokeWidth="1.4"
-            strokeLinejoin="round"
-            transform={`rotate(${w.rot} ${w.x + w.w / 2} ${w.y})`}
-            initial={false}
-            animate={{ opacity: w.y > level + 6 ? 1 : 0 }}
-          />
-        ))}
+      <rect x="18" y={top} width="84" height={bottom - top} rx="8" fill="rgba(15,23,20,0.05)" />
+      <g clipPath="url(#gauge-in)">
+        <motion.g initial={false} animate={{ y: level - top }} transition={{ type: 'spring', stiffness: 45, damping: 13 }}>
+          <path d={`M18 ${top + 3} Q 40 ${top - 3}, 60 ${top + 2} T 102 ${top + 1} V 140 H 18 Z`} fill="url(#gauge-steel)" />
+          <path d={`M18 ${top + 3} Q 40 ${top - 3}, 60 ${top + 2} T 102 ${top + 1} V 140 H 18 Z`} fill="url(#gauge-hatch)" />
+          <path d={`M18 ${top + 3} Q 40 ${top - 3}, 60 ${top + 2} T 102 ${top + 1}`} stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" fill="none" />
+        </motion.g>
       </g>
-      <path d="M16 30h88v66a6 6 0 0 1-6 6H22a6 6 0 0 1-6-6z" fill="none" stroke={full ? '#D9822B' : '#0F1714'} strokeWidth="2.5" />
-      <path d="M10 30h100" stroke={full ? '#D9822B' : '#0F1714'} strokeWidth="3.5" strokeLinecap="round" />
-      <path d="M50 22h20" stroke={full ? '#D9822B' : '#0F1714'} strokeWidth="3.5" strokeLinecap="round" />
-      <text x="60" y="70" textAnchor="middle" fontSize="18" fontWeight="700" fill={r > 0.55 ? '#fff' : '#0F1714'} style={{ fontFamily: 'var(--font-display)' }}>
+      <rect x="18" y={top} width="84" height={bottom - top} rx="8" fill="none" stroke={stroke} strokeWidth="2.5" />
+      <rect x="44" y={top - 7} width="32" height="5" rx="2.5" fill={stroke} />
+      <g transform="translate(46 80) scale(0.44)" opacity={r > 0.35 ? 0.9 : 0.35}>
+        <path d={HANGER_PATH} stroke={r > 0.35 ? '#fff' : '#0F1714'} strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      </g>
+      <text x="60" y={r > 0.55 ? 72 : Math.min(level - 8, 80)} textAnchor="middle" fontSize="19" fontWeight="700" fill={r > 0.55 ? '#fff' : '#0F1714'} style={{ fontFamily: 'var(--font-display)' }}>
         {Math.round(r * 100)}%
       </text>
     </svg>

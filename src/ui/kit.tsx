@@ -266,7 +266,7 @@ export function QR({ value, size = 168, color = '#0F1714', accent }: { value: st
 }
 
 export function LaundryBadge({ name, hue, size = 44 }: { name: string; hue: number; size?: number }) {
-  const letter = name.replace('مغسلة ', '').replace(/[ًٌٍَُِّْ]/g, '').trim()[0] ?? 'م'
+  const letter = name.replace('مغسلة ', '').replace(/[ًٌٍَُِّْ]/g, '').trim().replace(/^ال/, '')[0] ?? 'م'
   return (
     <div
       className="grid shrink-0 place-items-center rounded-2xl font-display font-semibold text-white"

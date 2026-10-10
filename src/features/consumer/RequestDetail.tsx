@@ -2,7 +2,7 @@ import { motion } from 'motion/react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { economics } from '@/config/economics'
 import { acceptsDamagedNow, byId, distanceKm, neighborhoodOf, reservedFor } from '@/domain/services'
-import { hangers, num, rewardRule, rewardTitle } from '@/lib/format'
+import { hangers, num, points, rewardRule, rewardTitle } from '@/lib/format'
 import { useStore } from '@/store/store'
 import { Icon } from '@/ui/Icon'
 import { Button, Card, LaundryBadge, TopBar, WireProgress } from '@/ui/kit'
@@ -77,14 +77,14 @@ export function RequestDetail() {
                 <span className="h-2.5 w-2.5 rounded-full bg-loop" />
                 الصالحة
               </div>
-              <div className="mt-1 text-xs leading-5 text-mute">كوبونات + {economics.usablePointsPerHanger} نقاط للعلاقة</div>
+              <div className="mt-1 text-xs leading-5 text-mute">كوبونات + {points(economics.usablePointsPerHanger)} للعلاقة</div>
             </div>
             <div className="p-4">
               <div className="flex items-center gap-1.5 font-semibold text-steel-700">
                 <span className="h-2.5 w-2.5 rounded-full bg-steel" />
                 التالفة
               </div>
-              <div className="mt-1 text-xs leading-5 text-mute">{damagedOk ? `${economics.damagedPointsPerHanger} نقطة للعلاقة، تروح لمصنع الحديد` : 'نوجّهها لمغسلة قريبة ثانية'}</div>
+              <div className="mt-1 text-xs leading-5 text-mute">{damagedOk ? `${points(economics.damagedPointsPerHanger)} للعلاقة، تروح لمصنع الحديد` : 'نوجّهها لمغسلة قريبة ثانية'}</div>
             </div>
           </div>
         </Card>

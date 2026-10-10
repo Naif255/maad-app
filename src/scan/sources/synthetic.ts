@@ -137,7 +137,6 @@ export class SyntheticSource implements FrameSource {
   private t0 = 0
   private pausedAt?: number
   private pausedTotal = 0
-  private raf = 0
   private last?: Frame
   private readonly duration = 6200
 
@@ -152,11 +151,7 @@ export class SyntheticSource implements FrameSource {
 
   async start() {
     this.t0 = performance.now()
-    const loop = () => {
-      this.render()
-      this.raf = requestAnimationFrame(loop)
-    }
-    loop()
+    this.render()
   }
 
   private clock() {
@@ -334,6 +329,7 @@ export class SyntheticSource implements FrameSource {
   }
 
   frame() {
+    if (this.pausedAt === undefined) this.render()
     return this.last
   }
 
@@ -353,6 +349,6 @@ export class SyntheticSource implements FrameSource {
   }
 
   stop() {
-    cancelAnimationFrame(this.raf)
+    this.pausedAt = this.pausedAt ?? performance.now()
   }
 }

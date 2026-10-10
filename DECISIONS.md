@@ -60,3 +60,13 @@ One line of reasoning per decision. Newest at the bottom of each phase.
 - Scanner HUD overlays are click-through, so hangers under the gradient can still be tapped for their breakdown.
 - Director bell toggle simulates "no nearby requests" to show the notify-me empty state on demand.
 - Routing copy for a usable-only laundry reuses the "box not accepting right now" note, which stays true in both cases.
+
+## Phase 3
+
+- The synthetic source paints a new frame only when the scan engine asks for one, and scan state is committed with `flushSync`. Boxes and pixels always come from the same instant, so boxes sit exactly on the hangers even on slow devices.
+- On phones (no stage), the role switcher is a small edge handle instead of a floating button, so it never covers content.
+- Laundry box gauge redrawn as a drop box with a slot and a metallic fill level; the percentage stays legible at every level.
+- Impact dashboard scales hero numbers and hides the logo on small screens; ticker lines wrap to two lines instead of truncating.
+- Arabic number agreement handled in one place (`format.ts`): dual forms (علاقتين، نقطتين، ثوبين، قطعتين), plural 3–10, singular 11+.
+- Laundry badge initials skip the definite article (الخزامى → خ).
+- Mobile gallery spec (`e2e/gallery.spec.ts`) captures every main screen at 390×844 for visual review.

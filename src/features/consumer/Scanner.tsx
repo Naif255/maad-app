@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { appConfig } from '@/config/app'
 import { CRITERIA, type HangerVerdict } from '@/domain/types'
@@ -52,7 +53,9 @@ export function Scanner() {
         detector: p.detector,
         seed: index,
         idPrefix: `b${index}`,
-        onState: (s) => !stopped && setState(s),
+        onState: (s) => {
+          if (!stopped) flushSync(() => setState(s))
+        },
         onConfirm: () => {
           haptic(6)
           tick()
@@ -302,11 +305,11 @@ function Boxes({ tracks, state, size, locked, onPick }: { tracks: TrackView[]; s
               key={t.id}
               onClick={() => onPick(t)}
               initial={{ opacity: 0, scale: 1.25 }}
-              animate={{ opacity: 1, scale: 1, x, y, width: w, height: h }}
+              animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ x: { duration: 0 }, y: { duration: 0 }, width: { duration: 0 }, height: { duration: 0 }, scale: { type: 'spring', stiffness: 300, damping: 20 } }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
               className="absolute left-0 top-0"
-              style={{ originX: 0.5, originY: 0.5 }}
+              style={{ x, y, width: w, height: h, originX: 0.5, originY: 0.5 }}
             >
               <Brackets color={color} dashed={!v} glow={!!v && locked} />
               {v && (

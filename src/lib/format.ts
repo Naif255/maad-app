@@ -68,13 +68,18 @@ export function hangersWord(n: number) {
 }
 
 export function points(n: number) {
+  if (n === 1) return 'نقطة وحدة'
+  if (n === 2) return 'نقطتين'
+  if (n >= 3 && n <= 10) return `${num(n)} نقاط`
   return `${num(n)} نقطة`
 }
 
 export function rewardTitle(r: Reward) {
-  if (r.kind === 'ironing') return `كوي ${r.value} ${r.value <= 10 ? 'قطع' : 'قطعة'} مجانًا`
+  if (r.kind === 'ironing') return r.value === 2 ? 'كوي قطعتين مجانًا' : `كوي ${r.value} ${r.value <= 10 ? 'قطع' : 'قطعة'} مجانًا`
   if (r.kind === 'discount') return `خصم ${r.value}٪ على طلبك`
-  return r.value === 1 ? 'غسيل ثوب مجانًا' : `غسيل ${r.value} ${r.value <= 10 ? 'ثياب' : 'ثوب'} مجانًا`
+  if (r.value === 1) return 'غسيل ثوب مجانًا'
+  if (r.value === 2) return 'غسيل ثوبين مجانًا'
+  return `غسيل ${r.value} ${r.value <= 10 ? 'ثياب' : 'ثوب'} مجانًا`
 }
 
 export function rewardRule(r: Reward) {

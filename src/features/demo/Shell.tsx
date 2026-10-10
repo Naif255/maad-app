@@ -206,14 +206,15 @@ function RoleFab() {
   const loc = useLocation()
   const role = roleOf(loc.pathname)
   return (
-    <div className="absolute bottom-24 left-3 z-[70]">
+    <div dir="ltr" className="absolute left-0 top-[42%] z-[70] flex items-start">
       <AnimatePresence>
         {open && (
           <motion.div
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="mb-2 w-44 overflow-hidden rounded-2xl bg-ink p-1.5 text-white shadow-lift"
+            dir="rtl"
+            className="order-2 ml-2 w-44 overflow-hidden rounded-2xl bg-ink p-1.5 text-white shadow-lift"
           >
             {ROLES.map((r) => (
               <button
@@ -242,8 +243,8 @@ function RoleFab() {
           </motion.div>
         )}
       </AnimatePresence>
-      <button onClick={() => setOpen((o) => !o)} className="grid h-11 w-11 place-items-center rounded-full bg-ink/85 text-white shadow-lift backdrop-blur" aria-label="تبديل الدور">
-        <Icon name={open ? 'close' : 'layers'} size={18} />
+      <button onClick={() => setOpen((o) => !o)} className="order-1 grid h-12 w-6 place-items-center rounded-r-xl bg-ink/70 text-white/90 shadow-lift backdrop-blur" aria-label="تبديل الدور">
+        <Icon name={open ? 'close' : 'layers'} size={14} />
       </button>
     </div>
   )
