@@ -1,0 +1,25 @@
+export const appConfig = {
+  fitnessThreshold: 80,
+  bookingExpiryHours: 48,
+  nearbyRadiusKm: 7,
+  sampleVideoUrl: '/media/sample.mp4',
+  onnxModelUrl: '',
+  onnxRuntimeUrl: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js',
+  demoPhone: '0551234567',
+  demoOtp: '4821',
+  scan: {
+    confirmFrames: 6,
+    lockQuietMs: 1800,
+    minScanMs: 2500,
+    criteriaWeights: {
+      straightness: 0.25,
+      hook: 0.25,
+      rust: 0.2,
+      coating: 0.1,
+      breaks: 0.2,
+    },
+    breakCap: { below: 50, maxScore: 55 },
+    hookCap: { below: 40, maxScore: 60 },
+  },
+  storageKey: 'maad-db-v1',
+}

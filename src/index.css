@@ -1,0 +1,146 @@
+@import '@fontsource-variable/readex-pro/index.css';
+@import '@fontsource/ibm-plex-sans-arabic/400.css';
+@import '@fontsource/ibm-plex-sans-arabic/500.css';
+@import '@fontsource/ibm-plex-sans-arabic/600.css';
+@import '@fontsource/ibm-plex-sans-arabic/700.css';
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'IBM Plex Sans Arabic', system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+  --font-display: 'Readex Pro Variable', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, monospace;
+
+  --color-ink: #0f1714;
+  --color-ink-2: #17221d;
+  --color-ink-3: #22302a;
+  --color-sand: #f6f2ea;
+  --color-sand-2: #ede7db;
+  --color-sand-3: #e2d9c8;
+  --color-paper: #fffdf8;
+  --color-mute: #6b7a73;
+  --color-faint: #9aa59f;
+
+  --color-loop: #0fa36b;
+  --color-loop-50: #e7f6ee;
+  --color-loop-100: #c9ecd9;
+  --color-loop-700: #0a7a50;
+  --color-loop-900: #064a31;
+
+  --color-steel: #7d8a96;
+  --color-steel-50: #eef1f3;
+  --color-steel-100: #dde3e8;
+  --color-steel-300: #b9c3cc;
+  --color-steel-700: #4e5a65;
+
+  --color-copper: #d9822b;
+  --color-copper-50: #fbf0e3;
+  --color-copper-100: #f5dcbf;
+  --color-copper-700: #a65d17;
+
+  --color-rust: #c2502a;
+  --color-rust-50: #fbebe5;
+
+  --radius-xl2: 1.25rem;
+  --radius-xl3: 1.75rem;
+
+  --shadow-card: 0 1px 0 rgba(15, 23, 20, 0.04), 0 8px 24px -12px rgba(15, 23, 20, 0.18);
+  --shadow-lift: 0 2px 0 rgba(15, 23, 20, 0.03), 0 24px 48px -20px rgba(15, 23, 20, 0.35);
+
+  --ease-spring: cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-sand text-ink font-sans antialiased;
+    font-feature-settings: 'tnum' 1;
+    overscroll-behavior: none;
+  }
+  button {
+    cursor: pointer;
+  }
+  ::selection {
+    background: var(--color-loop-100);
+  }
+}
+
+@utility num {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility steel-sheen {
+  background: linear-gradient(135deg, #8c98a3 0%, #c9d1d8 38%, #7d8a96 62%, #aeb8c1 100%);
+}
+
+@utility grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes wire-flow {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+@keyframes scan-sweep {
+  0% {
+    transform: translateY(-10%);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110%);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+@keyframes ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(50%);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
