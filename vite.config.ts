@@ -3,11 +3,20 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import basicSsl from '@vitejs/plugin-basic-ssl'
 import { VitePWA } from 'vite-plugin-pwa'
+import type { Plugin } from 'vite'
 import { defineConfig } from 'vitest/config'
+
+const sync = (): Plugin => ({
+  name: 'maad-sync',
+  configureServer(server) {
+    for (const ev of ['maad:state', 'maad:hello']) server.ws.on(ev, (data) => server.ws.send(ev, data))
+  },
+})
 
 export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
+    sync(),
     tailwindcss(),
     ...(mode === 'https' ? [basicSsl()] : []),
     VitePWA({

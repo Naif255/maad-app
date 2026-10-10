@@ -15,6 +15,8 @@ npm run build
 
 ## Demo
 
+The full presenter run sheet is in [DEMO.md](DEMO.md).
+
 Open on a laptop at ≥1100px wide for stage mode: director bar, phone, and live impact panel.
 
 - Roles: Consumer, Laundry, Factory, Impact (top bar, or Alt+1..4)
@@ -23,6 +25,7 @@ Open on a laptop at ≥1100px wide for stage mode: director bar, phone, and live
 - "Demo video / Camera" toggles the scan source
 - "48h" advances the clock to show booking expiry
 - Brand mood board: `#/brand`
+- Phone + laptop: run `npm run dev:https` and open `https://<lan-ip>:5173/?sync=1#/c` on both. State syncs over the dev server's websocket (dev mode only)
 
 ## Scan module
 

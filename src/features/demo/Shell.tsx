@@ -6,6 +6,7 @@ import { Icon, type IconName } from '@/ui/Icon'
 import { cx } from '@/ui/kit'
 import { Logo } from '@/ui/Logo'
 import { ImpactLive } from '../impact/ImpactLive'
+import { syncActive } from '@/store/sync'
 import { STORY, storyIndex } from './story'
 
 export function useMedia(q: string) {
@@ -135,6 +136,12 @@ function Director() {
   return (
     <div className="relative flex h-16 shrink-0 items-center gap-5 border-b border-white/5 bg-ink px-5 text-white">
       <Logo size={22} tone="light" />
+      {syncActive() && (
+        <span className="flex items-center gap-1.5 rounded-full bg-loop/20 px-2.5 py-1 text-[11px] font-semibold text-loop-100">
+          <Icon name="phone" size={13} />
+          متزامن
+        </span>
+      )}
       <div className="flex rounded-2xl bg-white/5 p-1">
         {ROLES.map((r) => (
           <button

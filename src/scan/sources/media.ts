@@ -85,6 +85,10 @@ export class VideoFileSource implements FrameSource {
     void this.element.play()
   }
 
+  busy() {
+    return !this.element.ended
+  }
+
   stop() {
     this.element.pause()
     this.element.removeAttribute('src')

@@ -70,3 +70,11 @@ One line of reasoning per decision. Newest at the bottom of each phase.
 - Arabic number agreement handled in one place (`format.ts`): dual forms (علاقتين، نقطتين، ثوبين، قطعتين), plural 3–10, singular 11+.
 - Laundry badge initials skip the definite article (الخزامى → خ).
 - Mobile gallery spec (`e2e/gallery.spec.ts`) captures every main screen at 390×844 for visual review.
+
+## Phase 4
+
+- Production build verified offline: after one load, the PWA serves the app shell, fonts and the demo scan with the network off.
+- Phone + laptop sync is opt-in (`?sync=1`) and rides on Vite's dev-server websocket via a tiny plugin, so it needs no extra infrastructure and no second server. Shared: db, demo clock, celebration, notify toggle. Per device: signed-in user, scan batches, scan source.
+- The first device to join keeps its state; a newcomer adopts the existing state through a hello/reply handshake.
+- A recorded sample video locks only after the clip ends (`busy()` until `ended`), so the real-video run is deterministic together with `sample.json`.
+- `DEMO.md` is the presenter run sheet: setup, the timed 2-minute story, extra moments, failure recovery, and how to record the sample video.
