@@ -17,7 +17,7 @@ test('phone and laptop stay in sync over the dev server', async ({ browser }) =>
   await expect(phone.getByText('رمزك الشخصي')).toBeVisible()
 
   await laptop.getByRole('button', { name: 'المغسلة' }).first().click()
-  await expect(laptop.getByText('M-', { exact: false }).nth(1)).toBeVisible()
+  await expect(laptop.getByText(/عملاء جايين يسلّمون/)).toBeVisible()
   await laptop.goto('/?sync=1&demo=1#/l/customer/u-demo')
   await laptop.getByRole('button', { name: 'استلمت' }).click()
   await expect(laptop.getByText('امتلى الصندوق!')).toBeVisible()

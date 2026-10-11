@@ -6,9 +6,12 @@ export const CRITERIA: CriterionKey[] = ['straightness', 'hook', 'rust', 'coatin
 
 export type Criteria = Record<CriterionKey, number>
 
+export type AreaId = 'north' | 'center' | 'south'
+
 export interface Neighborhood {
   id: string
   name: string
+  area: AreaId
   x: number
   y: number
 }

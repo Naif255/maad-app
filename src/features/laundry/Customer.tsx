@@ -2,8 +2,8 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { economics } from '@/config/economics'
-import { acceptsDamagedNow, byId } from '@/domain/services'
-import { daysLeft, num, rewardTitle } from '@/lib/format'
+import { acceptsDamagedNow } from '@/domain/services'
+import { daysLeft, hangers, rewardTitle } from '@/lib/format'
 import { useStore } from '@/store/store'
 import { Carton } from '@/ui/Carton'
 import { Icon } from '@/ui/Icon'
@@ -24,7 +24,6 @@ export function Customer() {
   const [redeemed, setRedeemed] = useState<string>()
   const bookings = db.bookings.filter((b) => b.userId === userId && b.laundryId === l.id && b.status === 'awaiting')
   const coupons = db.coupons.filter((c) => c.userId === userId && c.laundryId === l.id && !c.redeemedAt && c.expiresAt > now)
-  const user = byId(db.users, userId)
   const usable = bookings.reduce((a, b) => a + b.usable, 0)
   const damaged = bookings.reduce((a, b) => a + b.damaged, 0)
 
@@ -38,7 +37,7 @@ export function Customer() {
 
   return (
     <div className="min-h-full bg-[#F3F1EC] pb-8">
-      <TopBar back="/l/scan" title="تسليم عميل" sub={user?.phone ? `جوال ينتهي بـ ${user.phone.slice(-4)}` : undefined} />
+      <TopBar back="/l/scan" title="تسليم عميل" sub={bookings.length ? `${bookings.map((b) => b.code).join(' · ')} · ${hangers(usable + damaged)}` : undefined} />
       <div className="space-y-3 px-4">
         {bookings.length ? (
           <>
@@ -60,7 +59,7 @@ export function Customer() {
               <Icon name="check" size={16} className="text-loop" />
               مفحوصة ومفروزة من العميل، ما يحتاج تفرزها
             </div>
-            {!acceptsDamagedNow(l) && damaged > 0 && <div className="rounded-2xl bg-copper-50 px-4 py-3 text-xs text-copper-700">ملاحظة: الصندوق ممتلئ، بس هالحجز انقبل قبل ما يمتلي.</div>}
+            {!acceptsDamagedNow(l) && damaged > 0 && <div className="rounded-2xl bg-steel-50 px-4 py-3 text-xs text-steel-700">الصندوق ممتلئ، بس هالحجز انقبل قبل ما يمتلي. خلّ الرمادي جنب الصندوق لين يجي المصنع.</div>}
             <Button className="w-full" icon="check" onClick={confirm}>
               استلمت
             </Button>
@@ -121,27 +120,29 @@ function Received({ usable, damaged, onBack }: { usable: number; damaged: number
       </motion.div>
       <div className="mt-6 font-display text-2xl font-semibold">تم الاستلام</div>
       <div className="mt-1 text-sm text-white/60">وصلت مكافأة العميل على جواله</div>
-      <div className="mt-8 grid w-full grid-cols-2 gap-3">
-        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
-          <div className="text-xs text-white/50">المخزون</div>
-          <div className="num mt-1 text-2xl font-semibold text-loop-100">+{num(usable)}</div>
-          <div className="num text-xs text-white/40">صار {num(l.stock)}</div>
+      <div className="mt-8 w-full space-y-2.5 text-start">
+        <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="flex items-center gap-3 rounded-2xl bg-white/5 px-4 py-3.5 ring-1 ring-white/10">
+          <span className="h-3 w-3 shrink-0 rounded bg-loop" />
+          <span className="flex-1 text-sm">
+            <b className="num">{hangers(usable)}</b> صالحة انضافت لمخزونك
+          </span>
         </motion.div>
-        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }} className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
-          <div className="text-xs text-white/50">صندوق مَعاد</div>
-          <div className="num mt-1 text-2xl font-semibold text-steel-100">+{num(damaged)}</div>
-          <div className="text-xs text-white/40">
-            <span className="num">{num(l.boxCount)}</span> من <span className="num">{economics.boxCapacityHangers}</span>
-          </div>
-        </motion.div>
+        {damaged > 0 && (
+          <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }} className="flex items-center gap-3 rounded-2xl bg-white/5 px-4 py-3.5 ring-1 ring-white/10">
+            <span className="h-3 w-3 shrink-0 rounded bg-steel-300" />
+            <span className="flex-1 text-sm">
+              <b className="num">{hangers(damaged)}</b> في صندوق مَعاد
+            </span>
+          </motion.div>
+        )}
       </div>
       <AnimatePresence>
         {l.boxCount >= economics.boxCapacityHangers && (
-          <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8 }} className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-copper px-4 py-3 text-start text-sm">
+          <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8 }} className="mt-3 flex w-full items-center gap-3 rounded-2xl steel-sheen px-4 py-3 text-start text-sm text-ink">
             <Icon name="truck" size={22} />
             <div>
               <div className="font-semibold">امتلى الصندوق!</div>
-              <div className="text-xs text-white/80">عرضنا الخردة على المصانع تلقائي</div>
+              <div className="text-xs text-ink/70">عرضنا الخردة على المصانع تلقائي</div>
             </div>
           </motion.div>
         )}

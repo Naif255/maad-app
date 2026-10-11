@@ -4,37 +4,37 @@ import { byId } from '@/domain/services'
 import { dateYear, kg, num, sar } from '@/lib/format'
 import { useStore } from '@/store/store'
 import { Icon } from '@/ui/Icon'
-import { Card, QR, TopBar } from '@/ui/kit'
+import { QR, TopBar } from '@/ui/kit'
 import { LogoMark } from '@/ui/Logo'
 
 export function Certificates() {
   const db = useStore((s) => s.db)
   const nav = useNavigate()
   const list = [...db.certificates].sort((a, b) => b.date - a.date)
+  const total = list.reduce((a, c) => a + c.kg, 0)
   return (
-    <div className="pb-8">
-      <TopBar title="شهادات التوريد" sub="لكل شحنة شهادة مصدر ونقاوة" />
-      <div className="space-y-2.5 px-4">
+    <div className="px-4 pb-8 pt-safe">
+      <header className="px-1 pb-4">
+        <h1 className="font-display text-[24px] font-semibold">شهادات التوريد</h1>
+        <div className="mt-0.5 text-sm text-mute">
+          <span className="num font-semibold text-ink">{kg(total)}</span> كجم حديد موثّق المصدر
+        </div>
+      </header>
+      <div className="divide-y divide-ink/[0.06] overflow-hidden rounded-[20px] bg-paper ring-1 ring-ink/5">
         {list.map((c, i) => (
-          <motion.div key={c.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-            <Card className="flex items-center gap-3 p-4" onClick={() => nav(`/f/cert/${c.id}`)}>
-              <div className="grid h-12 w-12 place-items-center rounded-xl bg-ink text-white">
-                <Icon name="cert" size={22} />
+          <motion.button key={c.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }} onClick={() => nav(`/f/cert/${c.id}`)} className="flex w-full items-center gap-3 px-4 py-3.5 text-start">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-ink text-white">
+              <Icon name="cert" size={20} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-[15px] font-semibold">{dateYear(c.date)}</div>
+              <div className="text-xs text-mute">
+                من {c.sources.length === 2 ? 'مغسلتين' : `${num(c.sources.length)} مغاسل`} · نقاوة <span className="num">{c.purity}٪</span>
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="num text-sm font-semibold" dir="ltr" style={{ textAlign: 'right' }}>
-                  {c.number}
-                </div>
-                <div className="text-xs text-mute">
-                  {dateYear(c.date)} · <span className="num">{c.sources.length}</span> مغاسل
-                </div>
-              </div>
-              <div className="text-end">
-                <div className="num text-sm font-semibold">{kg(c.kg)} كجم</div>
-                <div className="num text-[11px] text-loop-700">نقاوة {c.purity}٪</div>
-              </div>
-            </Card>
-          </motion.div>
+            </div>
+            <span className="num shrink-0 font-semibold">{kg(c.kg)} كجم</span>
+            <Icon name="chevron" size={18} className="shrink-0 text-faint" />
+          </motion.button>
         ))}
       </div>
     </div>

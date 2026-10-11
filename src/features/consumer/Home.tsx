@@ -1,81 +1,44 @@
 import { motion } from 'motion/react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { appConfig } from '@/config/app'
-import { acceptsDamagedNow, impactTotals, requestViews, type RequestView } from '@/domain/services'
-import { num, rewardRule, rewardTitle } from '@/lib/format'
+import { acceptsDamagedNow, impactTotals, nearbyRequestCount, requestViews, type RequestView } from '@/domain/services'
+import { greeting, hangers, num, rewardRule, rewardTitle } from '@/lib/format'
 import { useStore } from '@/store/store'
 import { Icon } from '@/ui/Icon'
-import { Button, Card, LaundryBadge, Odometer, Pill, SectionTitle, WireProgress } from '@/ui/kit'
-import { LogoMark } from '@/ui/Logo'
+import { Button, Card, cx, LaundryBadge, Odometer, Sheet, WireProgress } from '@/ui/kit'
 import { useHome, useMe } from './hooks'
 
 export function Home() {
   const db = useStore((s) => s.db)
   const hide = useStore((s) => s.hideNearby)
-  const me = useMe()
+  const now = useStore((s) => s.now)()
   const home = useHome()
   const nav = useNavigate()
+  const [pick, setPick] = useState(false)
   const views = useMemo(() => (hide ? [] : requestViews(db, home, appConfig.nearbyRadiusKm)), [db, home, hide])
   const hood = useMemo(() => impactTotals(db).leaderboard.find((l) => l.n.id === home.id)?.count ?? 0, [db, home])
 
   return (
     <div className="pb-10">
-      <header className="px-5 pb-2" style={{ paddingTop: 'calc(var(--status, 0px) + 28px)' }}>
-        <div className="text-sm text-mute">{me?.name ? `هلا ${me.name}` : 'هلا والله'}</div>
-        <div className="mt-0.5 flex items-center gap-1 font-display text-lg font-semibold">
-          <Icon name="pin" size={17} className="text-loop" />
-          {home.name}، بريدة
-        </div>
+      <header className="px-5 pb-1" style={{ paddingTop: 'calc(var(--status, 0px) + 28px)' }}>
+        <div className="text-sm text-mute">{greeting(now)}</div>
+        <button onClick={() => setPick(true)} className="-ms-1 mt-0.5 flex items-center gap-1 rounded-xl px-1 py-0.5 font-display text-[22px] font-semibold hover:bg-ink/5" aria-label="غيّر الحي">
+          <Icon name="pin" size={19} className="text-loop" />
+          {home.name}
+          <Icon name="chevron" size={18} className="-rotate-90 text-mute" />
+        </button>
+        {hood > 0 && (
+          <div className="mt-1 text-[13px] text-mute">
+            جيرانك رجّعوا <Odometer value={hood} className="font-semibold text-loop-700" /> علاقة لين الحين
+          </div>
+        )}
       </header>
 
       <div className="px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative mt-3 overflow-hidden rounded-[30px] bg-ink p-6 text-white"
-        >
-          <div className="absolute -bottom-6 -left-12 opacity-[0.18]">
-            <LogoMark size={210} color="#0FA36B" draw strokeWidth={2} />
-          </div>
-          <div className="relative">
-            <Pill tone="loop" className="bg-loop/20 text-loop-100">
-              يشتغل بالكاميرا
-            </Pill>
-            <h1 className="mt-3 font-display text-[26px] font-semibold leading-[1.25]">
-              علاقات الملابس
-              <br />
-              مكدّسة عندك؟
-            </h1>
-            <p className="mt-2 max-w-[16rem] text-sm leading-6 text-white/65">وجّه الكاميرا عليها، ونقول لك وش يرجع للمغسلة ووش يصير حديد من جديد.</p>
-            <div className="mt-5 flex items-center gap-2 text-[13px] font-semibold text-white/80">
-              {(
-                [
-                  ['scan', 'افحص'],
-                  ['box', 'افرز'],
-                  ['gift', 'سلّم واكسب'],
-                ] as const
-              ).map(([icon, label], i) => (
-                <span key={label} className="flex items-center gap-2">
-                  {i > 0 && <span className="h-px w-4 bg-white/20" />}
-                  <Icon name={icon} size={16} className="text-loop" />
-                  {label}
-                </span>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-
-        <div className="mt-3 flex items-center gap-3 rounded-2xl bg-loop-50 px-4 py-3 text-sm text-loop-900">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-loop text-white">
-            <Icon name="spark" size={16} />
-          </span>
-          <span>
-            حي {home.name} رجّع <Odometer value={hood} className="font-bold" /> علاقة لين الحين
-          </span>
+        <div className="mb-3 mt-6 px-1">
+          <h1 className="font-display text-[19px] font-semibold">مغاسل قريبة تحتاج علاقات</h1>
         </div>
-
-        <SectionTitle action={<span className="text-xs text-mute">{views.length ? `${views.length} مغاسل` : ''}</span>}>مغاسل قريبة تحتاج علاقات</SectionTitle>
 
         {views.length ? (
           <div className="flex flex-col gap-3">
@@ -87,6 +50,7 @@ export function Home() {
           <NotifyCard />
         )}
       </div>
+      <HoodSheet open={pick} onClose={() => setPick(false)} />
     </div>
   )
 }
@@ -97,47 +61,64 @@ export function RequestCard({ v, i = 0, onClick }: { v: RequestView; i?: number;
   return (
     <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 * i }}>
       <Card onClick={onClick} className="p-4">
-        <div className="flex items-start gap-3">
-          <LaundryBadge name={l.name} hue={l.hue} />
+        <div className="flex items-center gap-3">
+          <LaundryBadge name={l.name} hue={l.hue} size={46} />
           <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
-              <div className="truncate font-display text-[16px] font-semibold">{l.name}</div>
-              <div className="num shrink-0 text-xs text-mute">{v.distance.toFixed(1)} كم</div>
-            </div>
-            <div className="mt-0.5 text-xs text-mute">
-              تحتاج <span className="num font-semibold text-ink">{num(v.remaining)}</span> {v.remaining <= 10 && v.remaining >= 3 ? 'علاقات' : 'علاقة'}
+            <div className="truncate font-display text-[17px] font-semibold">{l.name}</div>
+            <div className="mt-0.5 text-[13px] text-mute">
+              تحتاج <span className="num font-semibold text-ink">{hangers(v.remaining)}</span>
             </div>
           </div>
+          <div className="num shrink-0 self-start rounded-full bg-ink/[0.05] px-2.5 py-1 text-xs font-semibold text-mute">{v.distance.toFixed(1)} كم</div>
         </div>
-        <div className="mt-3 flex items-center gap-2 rounded-2xl bg-copper-50 px-3 py-2.5">
-          <Icon name="gift" size={18} className="shrink-0 text-copper" />
-          <div className="min-w-0 flex-1 text-[13px]">
-            <span className="font-semibold text-copper-700">{rewardTitle(r.reward)}</span>
-            <span className="text-copper-700/70"> · {rewardRule(r.reward)}</span>
-          </div>
-        </div>
-        <div className="mt-3.5">
-          <WireProgress value={r.collected} reserved={v.reserved} max={r.target} />
-          <div className="mt-2 flex items-center justify-between text-xs">
-            <span className="text-mute">
-              <span className="num font-semibold text-ink">{num(r.collected)}</span> وصلت
-              {v.reserved > 0 && (
-                <>
-                  {' '}
-                  · <span className="num">{num(v.reserved)}</span> بالطريق
-                </>
-              )}{' '}
-              · من <span className="num">{num(r.target)}</span>
-            </span>
-            {!damagedOk && (
-              <Pill tone="steel" className="h-5 text-[11px]">
-                تستقبل الصالحة فقط
-              </Pill>
-            )}
+        <WireProgress className="mt-3.5" value={r.collected} reserved={v.reserved} max={r.target} height={6} />
+        <div className="mt-3.5 flex items-center gap-2.5">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-copper-50 text-copper">
+            <Icon name="gift" size={17} />
+          </span>
+          <div className="min-w-0 flex-1 leading-5">
+            <div className="truncate text-[14px] font-semibold text-copper-700">{rewardTitle(r.reward)}</div>
+            <div className="truncate text-xs text-mute">
+              {rewardRule(r.reward)}
+              {!damagedOk && <span className="text-steel-700"> · الصالحة فقط</span>}
+            </div>
           </div>
         </div>
       </Card>
     </motion.div>
+  )
+}
+
+export function HoodSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const db = useStore((s) => s.db)
+  const set = useStore((s) => s.setNeighborhood)
+  const home = useHome()
+  return (
+    <Sheet open={open} onClose={onClose}>
+      <h3 className="font-display text-xl font-semibold">وين ساكن؟</h3>
+      <p className="mt-1 text-sm text-mute">نوريك المغاسل القريبة من حيّك.</p>
+      <div className="mt-4 divide-y divide-ink/5">
+        {db.neighborhoods.map((n) => {
+          const count = nearbyRequestCount(db, n.id, appConfig.nearbyRadiusKm)
+          const on = n.id === home.id
+          return (
+            <button
+              key={n.id}
+              onClick={() => {
+                set(n.id)
+                onClose()
+              }}
+              className="flex w-full items-center gap-3 py-3.5 text-start"
+            >
+              <Icon name="pin" size={18} className={on ? 'text-loop' : 'text-faint'} />
+              <span className="flex-1 font-semibold">{n.name}</span>
+              <span className="text-xs text-mute">{count ? `${num(count)} قريبة` : 'ما فيه طلبات'}</span>
+              <span className={cx('grid h-6 w-6 place-items-center rounded-full', on ? 'bg-loop text-white' : 'ring-2 ring-ink/10')}>{on && <Icon name="check" size={14} strokeWidth={3} />}</span>
+            </button>
+          )
+        })}
+      </div>
+    </Sheet>
   )
 }
 
@@ -159,4 +140,3 @@ function NotifyCard() {
     </Card>
   )
 }
-

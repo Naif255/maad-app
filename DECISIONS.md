@@ -96,3 +96,32 @@ One line of reasoning per decision. Newest at the bottom of each phase.
 - Scanner HUD is a single compact row (close plus both counters), and the gradients are lighter, so far less of the frame (and fewer hangers) sits under overlays.
 - iPhone home screen: `apple-mobile-web-app-capable`, `black-translucent` status bar, 180px apple-touch-icon, 192/512 PNG manifest icons (rendered from the logo SVG by `scripts/icons.mjs`), explicit `start_url`/`scope`, portrait. All headers pad with the safe-area inset (`pt-safe` utility, TopBar, scanner, entry, impact), so nothing sits under the notch in standalone mode.
 - Impact dashboard: the logo (or a back button on phones) returns to `/`. The hero label is shortened and the ticker time sits under the text, so lines don't wrap awkwardly.
+
+## Final UX pass
+
+Principle applied everywhere: each screen answers one question with one key number in plain words; the rest is a tap away. Color is semantic only: green = primary action and usable, steel = recyclable, copper = rewards and money.
+
+- Entry: a welcome page (one line, three steps, "مين أنت؟") replaces the plain picker. Role options are phrased as situations ("عندي علاقات في البيت / عندي مغسلة / عندي مصنع حديد") instead of nouns, so a first-timer recognises themselves without knowing the product's vocabulary.
+- Simulated sign-in replaces "no login" at the owner's request. Consumer: phone (prefilled, editable), then the OTP fills itself and continues on its own, then neighborhood. Laundry/factory: prefilled business email and password, one tap. No demo wording in product mode.
+- Sessions are per role (`signedIn`). Switch account returns to the welcome page; a role you already signed into opens straight away, a new one asks for sign-in. A role URL without a session redirects to welcome (or that role's sign-in if another session exists).
+- Demo mode auto-creates the session for any role route, so story chips and role buttons never hit sign-in. Reset clears sessions and lands on the welcome page.
+- The neighborhood picker shows how many nearby laundries need hangers per neighborhood, which explains why we ask. The home header's neighborhood is a real control (sheet), so a wrong pick is fixable in one tap; حسابي has the same control.
+- The seed user has no name; the greeting is صباح الخير / مساء الخير. حسابي shows the signed-in phone. Storage key bumped to v3 so old saved names don't linger.
+- Home: hero removed (the welcome page already explains). Request cards keep name, "تحتاج 48 علاقة", distance, reward and a progress bar; the "140 وصلت · 12 بالطريق · من 200" caption moved to the request page, where "وصلهم 140 من 200" sits under the big number. The bar still shows progress on the card, so the product rule holds without a third number.
+- Request page: one big number (تحتاج الحين), one reward line, no four-step explainer.
+- Scanner HUD: one key number (hangers found) with the green/grey split as small secondary text, instead of two equal counters.
+- Summary: the per-hanger points breakdown collapsed into one copper line ("بعد ما تسلّمها بتحصل: كوبون … + 82 نقطة").
+- Receipt leads with what to do now ("سلّمها لمغسلة نَدى · قبل الثلاثاء 5:40 م · باقي 47 ساعة") instead of a countdown clock. The QR and booking code follow, the four-step timeline is a compact horizontal strip, and the carton tips merged into the per-laundry rows.
+- Wallet pass shows tier and balance only (plus the QR, which is the pass's purpose). Lifetime hangers, kg, earned points and the next-tier bar moved to رجّعاتي, which now leads with one big number. History rows dropped the repeated "وصلت المكافأة" badge; a status pill only appears when something is pending or expired.
+- Laundry dashboard leads with the box in words ("صندوقك قرب يمتلي · باقي 5 علاقات…") and its value, then exactly one next step: incoming customers with "امسح رمز العميل", or "انشر طلب جديد" when no request is open. Stat tiles cut from three to two (stock, month savings); scrap income moved to the payouts tab.
+- Laundry السجل: segmented control (الاستلامات / مدفوعات الخردة). Receipts are grouped by day with booking code, time and a green/grey summary per row. Payouts lead with total scrap income, show the box currently waiting for the factory with its estimated value, then each paid shipment.
+- Settings for all three roles share one kit: profile header, grouped sections with notes, rows, switch account at the bottom.
+- Factory rebuilt as ready boxes → round → certificates (the tabs, in that order). Boxes are grouped by area (شمال/وسط/جنوب بريدة, a new `area` on each neighborhood) with laundry, kg and value. "جهّز جولة الاستلام" is the only action: it picks nearby boxes and orders them nearest-neighbor from the factory. Manual checkbox selection was removed; it added a decision nobody needs to make.
+- The round is an ordered stop list with the map. Only the current stop is expanded (weight stepper prefilled with the estimate, "أكّد الوزن", payout preview); done stops collapse to kg + payout. Finishing the last stop issues the certificate in place. The collapsing stop has no exit animation, so two confirm buttons never coexist (a double-tap hazard).
+- The separate rounds list was dropped: completed rounds live as certificates, and the round tab shows the active round or an empty state with the same one-tap action.
+- The laundry "received" screen states the result in words ("12 علاقة صالحة انضافت لمخزونك") instead of "+0" tiles.
+- Impact dashboard: one hero number (hangers back in the loop) and three small supporting tiles. Box-full events and pins use steel, not copper; the leaderboard leader is green. The histogram's threshold label now sits under the threshold line.
+- Color fixes: box-full ring, gauge outline and notices are steel (were copper); countdown and pending states are neutral (were copper). Copper now only marks rewards, points, prices and payouts.
+- Layout fixes found in the 390×844 review: the impact and sign-in screens got their own scroll containers (they could not scroll on phones), each role's scroll area resets on navigation, the factory map uses the map's own aspect ratio so the factory pin is never cropped, and the summary CTA sits at the bottom.
+- Screens are captured by `e2e/gallery.spec.ts` into `test-results/shots`. Playwright's own artifacts moved to `test-results/artifacts` so the shots survive later runs; the desktop story run writes to `test-results/story`.
+

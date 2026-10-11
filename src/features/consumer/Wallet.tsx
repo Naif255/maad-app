@@ -1,9 +1,9 @@
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from 'motion/react'
 import { useState } from 'react'
-import { economics, kgFromHangers } from '@/config/economics'
-import { byId, nextTier, tierOf } from '@/domain/services'
+import { economics } from '@/config/economics'
+import { byId, tierOf } from '@/domain/services'
 import type { Coupon } from '@/domain/types'
-import { date, daysLeft, kg, num, rewardTitle, TIER_LABEL } from '@/lib/format'
+import { date, daysLeft, num, rewardTitle, TIER_LABEL } from '@/lib/format'
 import { useStore } from '@/store/store'
 import { Icon } from '@/ui/Icon'
 import { Button, Card, cx, Odometer, Pill, QR, SectionTitle, Sheet } from '@/ui/kit'
@@ -27,11 +27,8 @@ export function Wallet() {
   const [donated, setDonated] = useState(false)
   if (!me) return null
   const tier = tierOf(me)
-  const next = nextTier(me)
-  const total = me.lifetimeUsable + me.lifetimeDamaged
   const coupons = db.coupons.filter((c) => c.userId === me.id).sort((a, b) => Number(!!a.redeemedAt) - Number(!!b.redeemedAt) || a.expiresAt - b.expiresAt)
   const trees = Math.floor(me.donatedPoints / economics.pointsPerTree)
-  const toNextTree = economics.pointsPerTree - (me.donatedPoints % economics.pointsPerTree)
 
   return (
     <div className="pb-10">
@@ -39,17 +36,7 @@ export function Wallet() {
         <div className="font-display text-2xl font-semibold">المحفظة</div>
       </header>
       <div className="px-4">
-        <Pass tier={tier} name={me.name || 'عضو مَعاد'} points={me.points} total={total} onQr={() => setQr(true)} userId={me.id} />
-        {next && (
-          <div className="mt-3 flex items-center gap-3 rounded-2xl bg-paper px-4 py-3 text-xs ring-1 ring-ink/5">
-            <span className="text-mute">
-              باقي <b className="num text-ink">{num(next.missing)}</b> علاقة وتصير <b className="text-ink">{TIER_LABEL[next.id]}</b>
-            </span>
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink/5">
-              <div className="h-full rounded-full bg-copper" style={{ width: `${Math.min(100, (total / (total + next.missing)) * 100)}%` }} />
-            </div>
-          </div>
-        )}
+        <Pass tier={tier} points={me.points} onQr={() => setQr(true)} userId={me.id} />
 
         <SectionTitle action={<span className="num text-xs text-mute">{coupons.filter((c) => !c.redeemedAt && c.expiresAt > now).length} فعّالة</span>}>كوبوناتك</SectionTitle>
         <div className="space-y-2.5">
@@ -97,9 +84,7 @@ export function Wallet() {
             </div>
           </div>
           <div className="flex items-center gap-3 p-4">
-            <div className="flex-1 text-xs text-mute">
-              باقي <b className="num text-ink">{num(toNextTree)}</b> نقطة للشجرة الجاية
-            </div>
+            <div className="flex-1 text-xs leading-5 text-mute">{me.points < economics.pointsPerTree ? 'تقدر تتبرع إذا وصل رصيدك ' + num(economics.pointsPerTree) + ' نقطة' : 'نقاطك تزرع شجرة باسمك'}</div>
             <Button
               size="md"
               disabled={me.points < economics.pointsPerTree}
@@ -152,7 +137,7 @@ export function Wallet() {
   )
 }
 
-function Pass({ tier, name, points, total, onQr, userId }: { tier: 'bronze' | 'silver' | 'gold'; name: string; points: number; total: number; onQr: () => void; userId: string }) {
+function Pass({ tier, points, onQr, userId }: { tier: 'bronze' | 'silver' | 'gold'; points: number; onQr: () => void; userId: string }) {
   const mx = useMotionValue(0.5)
   const my = useMotionValue(0.5)
   const rx = useSpring(useTransform(my, [0, 1], [7, -7]), { stiffness: 150, damping: 15 })
@@ -185,31 +170,17 @@ function Pass({ tier, name, points, total, onQr, userId }: { tier: 'bronze' | 's
         </div>
         <div className="rounded-full bg-black/20 px-3 py-1 text-xs font-bold backdrop-blur">عضو {TIER_LABEL[tier]}</div>
       </div>
-      <div className="relative mt-6 flex items-end justify-between">
+      <div className="relative mt-10 flex items-end justify-between">
         <div>
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-white/70">الرصيد</div>
+          <div className="text-xs font-semibold text-white/75">رصيدك</div>
           <div className="flex items-baseline gap-1">
-            <Odometer value={points} className="text-4xl font-semibold" />
+            <Odometer value={points} className="text-5xl font-semibold" />
             <span className="text-sm text-white/80">نقطة</span>
           </div>
         </div>
         <button onClick={onQr} className="rounded-2xl bg-white p-2 shadow-lg" aria-label="عرض الرمز">
           <QR value={loyaltyQrValue(userId)} size={64} />
         </button>
-      </div>
-      <div className="relative mt-5 grid grid-cols-3 gap-2 border-t border-white/25 pt-4 text-xs">
-        <div>
-          <div className="text-white/70">الاسم</div>
-          <div className="mt-0.5 truncate font-semibold">{name}</div>
-        </div>
-        <div>
-          <div className="text-white/70">رجّعت</div>
-          <div className="num mt-0.5 font-semibold">{num(total)} علاقة</div>
-        </div>
-        <div>
-          <div className="text-white/70">حديد</div>
-          <div className="num mt-0.5 font-semibold">{kg(kgFromHangers(total))} كجم</div>
-        </div>
       </div>
     </motion.div>
   )

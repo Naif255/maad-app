@@ -209,13 +209,13 @@ export function Sheet({
   )
 }
 
-export function TopBar({ title, back, right, dark = false, sub }: { title?: ReactNode; back?: boolean | string; right?: ReactNode; dark?: boolean; sub?: ReactNode }) {
+export function TopBar({ title, back, right, dark = false, sub }: { title?: ReactNode; back?: boolean | string | (() => void); right?: ReactNode; dark?: boolean; sub?: ReactNode }) {
   const nav = useNavigate()
   return (
     <div className={cx('sticky top-0 z-20 flex items-center gap-2 px-3 backdrop-blur-xl', dark ? 'bg-ink/70 text-white' : 'bg-sand/80')} style={{ paddingTop: 'var(--status, 0px)', height: 'calc(3.5rem + var(--status, 0px))' }}>
       {back ? (
         <button
-          onClick={() => (typeof back === 'string' ? nav(back) : nav(-1))}
+          onClick={() => (typeof back === 'function' ? back() : typeof back === 'string' ? nav(back) : nav(-1))}
           className={cx('grid h-10 w-10 place-items-center rounded-full', dark ? 'hover:bg-white/10' : 'hover:bg-ink/5')}
           aria-label="رجوع"
         >

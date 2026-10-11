@@ -17,7 +17,7 @@ export function activityText(db: Db, a: Activity) {
   const l = a.laundryId ? byId(db.laundries, a.laundryId) : undefined
   if (a.kind === 'return') return { icon: 'replay' as const, tone: 'loop', text: `شخص في حي ${hood} رجّع ${a.count} ${a.count >= 3 && a.count <= 10 ? 'علاقات' : 'علاقة'}` }
   if (a.kind === 'pickup') return { icon: 'truck' as const, tone: 'steel', text: `المصنع استلم صندوق ${l?.name ?? ''} وانصرف لها مستحقها` }
-  if (a.kind === 'boxFull') return { icon: 'box' as const, tone: 'copper', text: `امتلى صندوق ${l?.name ?? ''} في ${hood} وانعرض للمصانع` }
+  if (a.kind === 'boxFull') return { icon: 'box' as const, tone: 'steel', text: `امتلى صندوق ${l?.name ?? ''} في ${hood} وانعرض للمصانع` }
   return { icon: 'plus' as const, tone: 'loop', text: `${l?.name ?? ''} طلبت ${num(a.count)} علاقة من حي ${hood}` }
 }
 
@@ -57,11 +57,11 @@ export function ImpactLive({ compact = false }: { compact?: boolean }) {
           </div>
         </header>
 
-        <div className={cx('mt-6 grid gap-3', compact ? 'grid-cols-3' : 'grid-cols-2 lg:grid-cols-4')}>
-          <Hero label="علاقة رجعت للدورة" value={t.total} tone="loop" big />
-          <Hero label="كجم حديد ما راح للمردم" value={Math.round(t.kg * 10) / 10} tone="steel" format={num1} />
+        <div className={cx('mt-6 grid gap-3', compact ? 'grid-cols-3' : 'grid-cols-3 lg:grid-cols-4')}>
+          <Hero label="علاقة رجعت للدورة بدل ما تنرمي" value={t.total} tone="loop" big className={compact ? 'col-span-3' : 'col-span-3 lg:col-span-1'} />
+          <Hero label="كجم حديد" value={Math.round(t.kg * 10) / 10} tone="steel" format={num1} />
           <Hero label="ريال وفّرتها المغاسل" value={Math.round(t.savings)} tone="copper" />
-          {!compact && <Hero label="بيت شارك" value={homes} tone="ink" />}
+          <Hero label="بيت شارك" value={homes} tone="ink" />
         </div>
 
         <div className={cx('mt-3 grid gap-3', compact ? 'grid-cols-2' : 'grid-cols-1 lg:grid-cols-3')}>
@@ -90,15 +90,15 @@ export function ImpactLive({ compact = false }: { compact?: boolean }) {
   )
 }
 
-function Hero({ label, value, tone, big, format = num }: { label: string; value: number; tone: 'loop' | 'steel' | 'copper' | 'ink'; big?: boolean; format?: (n: number) => string }) {
+function Hero({ label, value, tone, big, format = num, className }: { label: string; value: number; tone: 'loop' | 'steel' | 'copper' | 'ink'; big?: boolean; format?: (n: number) => string; className?: string }) {
   const accent = tone === 'loop' ? 'bg-loop' : tone === 'steel' ? 'bg-steel-300' : tone === 'copper' ? 'bg-copper' : 'bg-white/30'
   return (
-    <div className="relative overflow-hidden rounded-[22px] bg-ink-2 p-5 ring-1 ring-white/5">
-      <div className={cx('absolute inset-y-5 start-0 w-1 rounded-e-full', accent)} />
+    <div className={cx('relative overflow-hidden rounded-[22px] bg-ink-2 ring-1 ring-white/5', big ? 'p-6' : 'p-4 lg:p-5', className)}>
+      <div className={cx('absolute start-0 w-1 rounded-e-full', big ? 'inset-y-6' : 'inset-y-4', accent)} />
       <motion.div key={value} initial={{ opacity: 0.6 }} animate={{ opacity: 1 }}>
-        <Odometer value={value} format={format} className={cx('font-semibold leading-none', big ? 'text-4xl lg:text-5xl' : 'text-3xl lg:text-4xl')} />
+        <Odometer value={value} format={format} className={cx('font-semibold leading-none', big ? 'text-6xl text-loop-100 lg:text-5xl' : 'text-2xl lg:text-4xl')} />
       </motion.div>
-      <div className="mt-2 text-sm text-white/55">{label}</div>
+      <div className={cx('mt-2 text-white/55', big ? 'text-[15px]' : 'text-xs lg:text-sm')}>{label}</div>
     </div>
   )
 }
@@ -182,10 +182,12 @@ function Histogram({ data }: { data: number[] }) {
         })}
         <div className="pointer-events-none absolute inset-y-0 border-l border-dashed border-white/40" style={{ left: `${appConfig.fitnessThreshold}%` }} />
       </div>
-      <div className="num mt-1.5 flex justify-between text-[10px] text-white/40" dir="ltr">
-        <span>0</span>
-        <span>{appConfig.fitnessThreshold}</span>
-        <span>100</span>
+      <div className="num relative mt-1.5 h-4 text-[10px] text-white/40" dir="ltr">
+        <span className="absolute left-0">0</span>
+        <span className="absolute -translate-x-1/2" style={{ left: `${appConfig.fitnessThreshold}%` }}>
+          {appConfig.fitnessThreshold}
+        </span>
+        <span className="absolute right-0">100</span>
       </div>
       <div className="mt-3 flex gap-4 text-[11px] text-white/60">
         <span className="flex items-center gap-1.5">
@@ -227,7 +229,7 @@ function Leaderboard({ rows }: { rows: { n: { id: string; name: string }; count:
     <div className="space-y-2.5">
       {rows.map((r, i) => (
         <motion.div layout key={r.n.id} className="flex items-center gap-3" title={`${r.n.name}: ${num(r.count)} علاقة`}>
-          <span className={cx('num grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold', i === 0 ? 'bg-copper text-white' : 'bg-white/10 text-white/70')}>{i + 1}</span>
+          <span className={cx('num grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold', i === 0 ? 'bg-loop text-white' : 'bg-white/10 text-white/70')}>{i + 1}</span>
           <div className="min-w-0 flex-1">
             <div className="flex justify-between text-sm">
               <span>{r.n.name}</span>
@@ -244,6 +246,10 @@ function Leaderboard({ rows }: { rows: { n: { id: string; name: string }; count:
 }
 
 export function ImpactPage() {
-  return <ImpactLive />
+  return (
+    <div id="impact-scroll" className="h-full overflow-y-auto bg-ink no-scrollbar">
+      <ImpactLive />
+    </div>
+  )
 }
 

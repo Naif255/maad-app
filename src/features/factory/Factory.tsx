@@ -1,20 +1,22 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useMemo, useState } from 'react'
-import { NavLink, Outlet, useNavigate, useParams } from 'react-router-dom'
+import { Navigate, NavLink, Outlet, useNavigate, useParams } from 'react-router-dom'
 import { economics, kgFromHangers } from '@/config/economics'
 import { DEMO_FACTORY_ID } from '@/data/seed'
-import { byId, distanceKm, proposeRound, readyListings } from '@/domain/services'
-import { ago, date, kg, num, sar } from '@/lib/format'
+import { activeRound, byId, lastRound, neighborhoodOf, proposeRound, readyByArea, readyListings, routeKm } from '@/domain/services'
+import type { Db, Factory } from '@/domain/types'
+import { ago, AREA_LABEL, kg, num, sar } from '@/lib/format'
 import { useStore } from '@/store/store'
 import { CityMap } from '@/ui/CityMap'
 import { Icon, type IconName } from '@/ui/Icon'
-import { Button, Card, cx, Pill, TopBar } from '@/ui/kit'
-import { SwitchAccount } from '@/ui/SwitchAccount'
+import { Button, Card, cx, LaundryBadge, TopBar } from '@/ui/kit'
+import { Group, Profile, Row, SwitchAccount } from '@/ui/SwitchAccount'
 import { haptic, useTicker } from '../consumer/hooks'
+import { useScrollReset } from '@/ui/useScrollReset'
 
 const TABS: { to: string; label: string; icon: IconName; end?: boolean }[] = [
-  { to: '/f', label: 'الخريطة', icon: 'map', end: true },
-  { to: '/f/rounds', label: 'الجولات', icon: 'truck' },
+  { to: '/f', label: 'الصناديق', icon: 'box', end: true },
+  { to: '/f/round', label: 'الجولة', icon: 'truck' },
   { to: '/f/certs', label: 'الشهادات', icon: 'cert' },
   { to: '/f/settings', label: 'الإعدادات', icon: 'settings' },
 ]
@@ -22,17 +24,21 @@ const TABS: { to: string; label: string; icon: IconName; end?: boolean }[] = [
 export const useFactory = () => byId(useStore((s) => s.db).factories, DEMO_FACTORY_ID)!
 
 export function FactoryLayout() {
+  const scrollRef = useScrollReset()
+  const db = useStore((s) => s.db)
+  const live = !!activeRound(db, DEMO_FACTORY_ID)
   return (
     <div className="flex h-full flex-col bg-steel-50">
-      <div className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden no-scrollbar">
+      <div ref={scrollRef} id="f-scroll" className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden no-scrollbar">
         <Outlet />
       </div>
       <nav className="shrink-0 border-t border-ink/5 bg-paper px-2 pb-[max(env(safe-area-inset-bottom),10px)] pt-2">
         <div className="flex justify-around">
           {TABS.map((t) => (
-            <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => cx('flex w-16 flex-col items-center gap-1 py-1 text-[11px] font-semibold', isActive ? 'text-ink' : 'text-faint')}>
+            <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => cx('relative flex w-16 flex-col items-center gap-1 py-1 text-[11px] font-semibold', isActive ? 'text-ink' : 'text-faint')}>
               <Icon name={t.icon} size={22} />
               {t.label}
+              {t.to === '/f/round' && live && <span className="absolute right-4 top-0.5 h-2.5 w-2.5 rounded-full bg-loop ring-2 ring-paper" />}
             </NavLink>
           ))}
         </div>
@@ -41,168 +47,204 @@ export function FactoryLayout() {
   )
 }
 
-export function FactoryMap() {
+function useStartRound() {
   const db = useStore((s) => s.db)
-  const f = useFactory()
   const approve = useStore((s) => s.approveRound)
   const nav = useNavigate()
-  const now = useTicker(5000)
-  const ready = readyListings(db)
+  const f = useFactory()
   const proposal = useMemo(() => proposeRound(db, f.id), [db, f.id])
-  const [picked, setPicked] = useState<string[] | undefined>()
-  const sel = picked ?? proposal
-  const active = db.rounds.find((r) => r.factoryId === f.id && !r.completedAt)
-  const selListings = sel.map((id) => byId(db.listings, id)!).filter(Boolean)
-  const count = selListings.reduce((a, l) => a + l.count, 0)
-  const estKg = kgFromHangers(count)
+  const start = () => {
+    const id = approve(f.id, proposal)
+    haptic(12)
+    nav(`/f/round/${id}`)
+  }
+  return { proposal, start }
+}
 
-  const toggle = (id: string) => setPicked((p) => ((p ?? proposal).includes(id) ? (p ?? proposal).filter((x) => x !== id) : [...(p ?? proposal), id]))
+export function FactoryBoxes() {
+  const db = useStore((s) => s.db)
+  const f = useFactory()
+  const nav = useNavigate()
+  const now = useTicker(30000)
+  const ready = readyListings(db)
+  const groups = useMemo(() => readyByArea(db), [db])
+  const active = activeRound(db, f.id)
+  const { proposal, start } = useStartRound()
+  const picked = proposal.map((id) => byId(db.listings, id)!)
+  const pickedKg = kgFromHangers(picked.reduce((a, l) => a + l.count, 0))
 
   return (
-    <div>
-      <div className="relative h-[46vh] min-h-[280px] overflow-hidden">
-        <CityMap neighborhoods={db.neighborhoods} className="absolute inset-0 h-full w-full">
-          {sel.length > 1 && <RouteLine points={[f, ...selListings.map((li) => byId(db.laundries, li.laundryId)!)]} />}
-          {db.laundries.map((l) => {
-            const listing = ready.find((x) => x.laundryId === l.id)
-            const ratio = Math.min(1, l.boxCount / economics.boxCapacityHangers)
-            const on = listing && sel.includes(listing.id)
-            return (
-              <g key={l.id} onClick={() => listing && toggle(listing.id)} style={{ cursor: listing ? 'pointer' : 'default' }}>
-                {listing && <circle cx={l.x} cy={l.y} r="26" fill="#D9822B" opacity="0.25" style={{ transformOrigin: `${l.x}px ${l.y}px`, animation: 'pulse-ring 2s ease-out infinite' }} />}
-                <circle cx={l.x} cy={l.y} r={listing ? 20 : 13} fill={listing ? (on ? '#D9822B' : '#fff') : '#fff'} stroke={listing ? '#D9822B' : '#B9C3CC'} strokeWidth="3" />
-                {!listing && l.acceptsDamaged && (
-                  <circle cx={l.x} cy={l.y} r="8" fill="none" stroke="#7D8A96" strokeWidth="5" strokeDasharray={`${ratio * 50.3} 60`} transform={`rotate(-90 ${l.x} ${l.y})`} />
-                )}
-                {listing && (
-                  <text x={l.x} y={l.y + 5} textAnchor="middle" fontSize="13" fontWeight="700" fill={on ? '#fff' : '#D9822B'} style={{ fontFamily: 'var(--font-display)' }}>
-                    {Math.round(kgFromHangers(listing.count))}
-                  </text>
-                )}
-              </g>
-            )
-          })}
-          <g>
-            <rect x={f.x - 22} y={f.y - 22} width="44" height="44" rx="12" fill="#0F1714" />
-            <path d={`M${f.x - 11} ${f.y + 9}v-11l7 4v-4l7 4v-9h4v16z`} fill="#fff" />
-          </g>
-        </CityMap>
-        <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-steel-50 via-steel-50/70 to-transparent px-5 pb-8 pt-safe">
-          <div className="text-sm text-mute">{f.name}</div>
-          <div className="font-display text-xl font-semibold">صناديق جاهزة للاستلام</div>
+    <div className="flex min-h-full flex-col">
+      <header className="px-5 pb-4 pt-safe">
+        <div className="text-sm text-mute">{f.name}</div>
+        <h1 className="font-display text-[24px] font-semibold">{ready.length ? `${ready.length === 1 ? 'صندوق واحد جاهز' : ready.length === 2 ? 'صندوقين جاهزين' : `${num(ready.length)} صناديق جاهزة`} للاستلام` : 'ما فيه صناديق جاهزة'}</h1>
+        <div className="mt-0.5 text-sm text-mute">
+          سعرك <span className="num font-semibold text-copper-700">{sar(f.pricePerKgSar)}</span> ر.س للكيلو
         </div>
-        <div className="absolute bottom-3 right-4 flex gap-2 text-[11px] font-semibold">
-          <span className="flex items-center gap-1 rounded-full bg-paper/90 px-2 py-1">
-            <span className="h-2.5 w-2.5 rounded-full bg-copper" />
-            ممتلئ
-          </span>
-          <span className="flex items-center gap-1 rounded-full bg-paper/90 px-2 py-1">
-            <span className="h-2.5 w-2.5 rounded-full border-2 border-steel" />
-            يتعبّى
-          </span>
-        </div>
-      </div>
+      </header>
 
-      <div className="relative -mt-4 space-y-3 rounded-t-[28px] bg-steel-50 px-4 pt-5">
+      <div className="px-4">
+        <div className="relative aspect-[10/7] overflow-hidden rounded-[24px] ring-1 ring-ink/5">
+          <BoxMap db={db} f={f} highlight={proposal} />
+          <div className="absolute left-2.5 top-2.5 flex gap-1.5 text-[11px] font-semibold">
+            <span className="flex items-center gap-1 rounded-full bg-paper/90 px-2 py-1">
+              <span className="h-2.5 w-2.5 rounded-full bg-steel-700" />
+              جاهز
+            </span>
+            <span className="flex items-center gap-1 rounded-full bg-paper/90 px-2 py-1">
+              <span className="h-2.5 w-2.5 rounded-full border-2 border-steel-300" />
+              يتعبّى
+            </span>
+          </div>
+        </div>
+
         {active && (
-          <Card className="flex items-center gap-3 bg-ink p-4 text-white" onClick={() => nav(`/f/round/${active.id}`)}>
-            <div className="grid h-11 w-11 place-items-center rounded-xl bg-copper">
+          <Card className="mt-3 flex items-center gap-3 bg-ink p-4 text-white" onClick={() => nav(`/f/round/${active.id}`)}>
+            <span className="grid h-11 w-11 place-items-center rounded-xl bg-loop">
               <Icon name="truck" size={22} />
-            </div>
+            </span>
             <div className="flex-1">
-              <div className="font-semibold">جولة جارية</div>
+              <div className="font-semibold">جولتك شغّالة</div>
               <div className="text-xs text-white/60">
-                {active.stops.filter((s) => s.collectedAt).length} من {active.stops.length} محطات
+                خلصت <span className="num">{active.stops.filter((s) => s.collectedAt).length}</span> من <span className="num">{active.stops.length}</span> محطات
               </div>
             </div>
             <Icon name="chevron" size={20} />
           </Card>
         )}
 
-        <div className="grid grid-cols-3 gap-2.5">
-          <Mini label="صناديق ممتلئة" value={num(ready.length)} />
-          <Mini label="وزن تقديري" value={`${kg(kgFromHangers(ready.reduce((a, l) => a + l.count, 0)))}`} unit="كجم" />
-          <Mini label="سعرك للكيلو" value={sar(f.pricePerKgSar)} unit="ر.س" />
-        </div>
-
-        {ready.length ? (
-          <Card className="overflow-hidden">
-            <div className="flex items-center justify-between px-4 pb-2 pt-4">
-              <div className="font-display font-semibold">الجولة المقترحة</div>
-              <Pill tone="copper">صناديق متقاربة</Pill>
-            </div>
-            <div className="divide-y divide-ink/5">
-              {ready.map((li) => {
-                const l = byId(db.laundries, li.laundryId)!
-                const on = sel.includes(li.id)
+        {groups.map((g) => (
+          <section key={g.area} className="mt-5">
+            <h2 className="mb-2 px-2 text-[13px] font-semibold text-mute">{AREA_LABEL[g.area as keyof typeof AREA_LABEL]}</h2>
+            <div className="divide-y divide-ink/[0.06] overflow-hidden rounded-[20px] bg-paper ring-1 ring-ink/5">
+              {g.items.map(({ listing, laundry }) => {
+                const kgs = kgFromHangers(listing.count)
+                const later = !proposal.includes(listing.id)
                 return (
-                  <button key={li.id} onClick={() => toggle(li.id)} className="flex w-full items-center gap-3 px-4 py-3 text-start">
-                    <div className={cx('grid h-6 w-6 place-items-center rounded-lg ring-2', on ? 'bg-copper text-white ring-copper' : 'ring-ink/15')}>{on && <Icon name="check" size={14} strokeWidth={3} />}</div>
+                  <div key={listing.id} className="flex items-center gap-3 px-4 py-3.5">
+                    <LaundryBadge name={laundry.name} hue={laundry.hue} size={40} />
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-semibold">{l.name}</div>
+                      <div className="truncate text-[15px] font-semibold">{laundry.name}</div>
                       <div className="text-xs text-mute">
-                        {byId(db.neighborhoods, l.neighborhoodId)!.name} · امتلى {ago(li.createdAt, now)}
+                        {neighborhoodOf(db, laundry.neighborhoodId).name} · {later && !active ? 'للجولة الجاية' : `امتلى ${ago(listing.createdAt, now)}`}
                       </div>
                     </div>
-                    <div className="text-end">
-                      <div className="num text-sm font-semibold">{kg(kgFromHangers(li.count))} كجم</div>
-                      <div className="num text-[11px] text-mute">
-                        {num(li.count)} علاقة · نقاوة {li.purity.toFixed(1)}٪
-                      </div>
+                    <div className="shrink-0 text-end">
+                      <div className="num text-[15px] font-semibold">{kg(kgs)} كجم</div>
+                      <div className="num text-xs font-semibold text-copper-700">≈ {sar(kgs * f.pricePerKgSar)} ر.س</div>
                     </div>
-                  </button>
+                  </div>
                 )
               })}
             </div>
-            <div className="flex items-center justify-between bg-sand px-4 py-3 text-sm">
-              <span className="text-mute">
-                <span className="num font-semibold text-ink">{sel.length}</span> محطات · <span className="num font-semibold text-ink">{kg(estKg)}</span> كجم
-              </span>
-              <span className="num font-semibold">≈ {sar(estKg * f.pricePerKgSar)} ر.س</span>
-            </div>
-          </Card>
-        ) : (
-          <Card className="p-6 text-center text-sm text-mute">ما فيه صناديق ممتلئة الحين. نعلمك أول ما يمتلي واحد.</Card>
+          </section>
+        ))}
+
+        {!ready.length && !active && (
+          <div className="mt-5 rounded-[20px] bg-paper p-6 text-center ring-1 ring-ink/5">
+            <div className="font-semibold">كل الصناديق تتعبّى الحين</div>
+            <div className="mt-1 text-sm text-mute">أول ما يمتلي صندوق يظهر هنا، ونرتّب لك الجولة.</div>
+          </div>
         )}
-        <div className="sticky bottom-0 bg-gradient-to-t from-steel-50 via-steel-50 to-transparent pb-5 pt-3">
-          <Button
-            variant="ink"
-            className="w-full"
-            icon="route"
-            disabled={!sel.length || !!active}
-            onClick={() => {
-              const id = approve(f.id, sel)
-              setPicked(undefined)
-              haptic(12)
-              nav(`/f/round/${id}`)
-            }}
-          >
-            {active ? 'عندك جولة جارية' : 'اعتمد جولة الاستلام'}
-          </Button>
-        </div>
+        <div className="h-6" />
       </div>
+
+      {ready.length > 0 && !active && (
+        <div className="sticky bottom-0 z-20 mt-auto bg-gradient-to-t from-steel-50 via-steel-50 to-transparent px-4 pb-4 pt-8">
+          <Button className="w-full" icon="route" onClick={start}>
+            جهّز جولة الاستلام
+          </Button>
+          <div className="mt-2 text-center text-xs text-mute">
+            {picked.length === 1 ? 'صندوق واحد' : picked.length === 2 ? 'صندوقين' : `${num(picked.length)} صناديق`} متقاربة · <span className="num">{kg(pickedKg)}</span> كجم ·{' '}
+            <span className="num font-semibold text-copper-700">≈ {sar(pickedKg * f.pricePerKgSar)} ر.س</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-function RouteLine({ points }: { points: { x: number; y: number }[] }) {
+function BoxMap({ db, f, highlight }: { db: Db; f: Factory; highlight: string[] }) {
+  const ready = readyListings(db)
+  const route = highlight.map((id) => byId(db.laundries, byId(db.listings, id)!.laundryId)!)
+  return (
+    <CityMap neighborhoods={db.neighborhoods} className="absolute inset-0 h-full w-full">
+      {route.length > 0 && <RouteLine points={[f, ...route]} faint />}
+      {db.laundries.map((l) => {
+        const listing = ready.find((x) => x.laundryId === l.id)
+        const ratio = Math.min(1, l.boxCount / economics.boxCapacityHangers)
+        if (listing)
+          return (
+            <g key={l.id}>
+              <circle cx={l.x} cy={l.y} r="44" fill="#4E5A65" opacity="0.18" style={{ transformOrigin: `${l.x}px ${l.y}px`, animation: 'pulse-ring 2.2s ease-out infinite' }} />
+              <circle cx={l.x} cy={l.y} r="34" fill="#4E5A65" stroke="#fff" strokeWidth="4" />
+              <text x={l.x} y={l.y + 9} textAnchor="middle" fontSize="26" fontWeight="700" fill="#fff" style={{ fontFamily: 'var(--font-display)' }}>
+                {Math.round(kgFromHangers(listing.count))}
+              </text>
+            </g>
+          )
+        if (!l.acceptsDamaged) return null
+        return (
+          <g key={l.id}>
+            <circle cx={l.x} cy={l.y} r="17" fill="#fff" stroke="#DDE3E8" strokeWidth="4" />
+            <circle cx={l.x} cy={l.y} r="9" fill="none" stroke="#9AA6B1" strokeWidth="6" strokeDasharray={`${ratio * 56.5} 70`} transform={`rotate(-90 ${l.x} ${l.y})`} />
+          </g>
+        )
+      })}
+      <FactoryPin f={f} />
+    </CityMap>
+  )
+}
+
+function FactoryPin({ f }: { f: { x: number; y: number } }) {
+  return (
+    <g>
+      <rect x={f.x - 30} y={f.y - 30} width="60" height="60" rx="16" fill="#0F1714" />
+      <path d={`M${f.x - 15} ${f.y + 13}v-15l9.5 5.5v-5.5l9.5 5.5v-12.5h5.5v22z`} fill="#fff" />
+    </g>
+  )
+}
+
+function RouteLine({ points, faint }: { points: { x: number; y: number }[]; faint?: boolean }) {
   const d = points.map((p, i) => `${i ? 'L' : 'M'}${p.x} ${p.y}`).join(' ')
   return (
     <>
-      <path d={d} stroke="#0F1714" strokeOpacity="0.15" strokeWidth="10" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      <motion.path d={d} stroke="#0F1714" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="10 10" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1 }} style={{ animation: 'wire-flow 1s linear infinite' }} />
+      <path d={d} stroke="#0F1714" strokeOpacity={faint ? 0.08 : 0.14} strokeWidth="12" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <motion.path d={d} stroke="#0F1714" strokeOpacity={faint ? 0.45 : 1} strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="10 10" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1 }} style={{ animation: 'wire-flow 1s linear infinite' }} />
     </>
   )
 }
 
-function Mini({ label, value, unit }: { label: string; value: string; unit?: string }) {
+export function RoundTab() {
+  const db = useStore((s) => s.db)
+  const f = useFactory()
+  const nav = useNavigate()
+  const active = activeRound(db, f.id)
+  const last = lastRound(db, f.id)
+  const ready = readyListings(db).length
+  const { start } = useStartRound()
+  if (active) return <Navigate to={`/f/round/${active.id}`} replace />
   return (
-    <div className="rounded-2xl bg-paper p-3 ring-1 ring-ink/5">
-      <div className="num text-lg font-semibold leading-none">
-        {value}
-        {unit && <span className="ms-0.5 text-[10px] font-normal text-mute">{unit}</span>}
+    <div className="flex min-h-full flex-col px-5 pb-8 pt-safe">
+      <h1 className="font-display text-[24px] font-semibold">الجولة</h1>
+      <div className="flex flex-1 flex-col items-center justify-center text-center">
+        <div className="grid h-20 w-20 place-items-center rounded-[28px] bg-paper text-steel-700 shadow-card">
+          <Icon name="truck" size={36} />
+        </div>
+        <div className="mt-5 font-display text-xl font-semibold">ما عندك جولة الحين</div>
+        <p className="mt-1.5 max-w-[17rem] text-sm leading-6 text-mute">{ready ? 'نجمع لك الصناديق الجاهزة المتقاربة في جولة وحدة، بالترتيب الأقصر.' : 'أول ما يمتلي صندوق، تقدر تجهّز جولة بضغطة.'}</p>
+        {ready > 0 && (
+          <Button className="mt-6 w-full" icon="route" onClick={start}>
+            جهّز جولة الاستلام
+          </Button>
+        )}
+        {last?.certificateId && (
+          <button onClick={() => nav(`/f/cert/${last.certificateId}`)} className="mt-4 flex items-center gap-1.5 text-sm font-semibold text-mute">
+            <Icon name="cert" size={16} />
+            شهادة آخر جولة
+          </button>
+        )}
       </div>
-      <div className="mt-1.5 text-[11px] text-mute">{label}</div>
     </div>
   )
 }
@@ -215,140 +257,129 @@ export function RoundView() {
   const nav = useNavigate()
   const round = byId(db.rounds, id)
   const [weights, setWeights] = useState<Record<string, number>>({})
-  if (!round) return null
-  const pts = [f, ...round.stops.map((s) => byId(db.laundries, s.laundryId)!)]
-  let dist = 0
-  for (let i = 1; i < pts.length; i++) dist += distanceKm(pts[i - 1], pts[i])
+  if (!round) return <Navigate to="/f/round" replace />
+  const laundries = round.stops.map((s) => byId(db.laundries, s.laundryId)!)
+  const dist = routeKm([f, ...laundries])
   const doneCount = round.stops.filter((s) => s.collectedAt).length
+  const current = round.stops.findIndex((s) => !s.collectedAt)
   const cert = round.certificateId
+  const paid = round.stops.reduce((a, s) => a + (s.payoutSar ?? 0), 0)
 
   return (
-    <div className="min-h-full pb-8">
-      <TopBar back="/f" title="جولة الاستلام" sub={`${round.stops.length} محطات · ${dist.toFixed(1)} كم`} />
-      <div className="mx-4 h-44 overflow-hidden rounded-[24px] ring-1 ring-ink/5">
+    <div className="min-h-full pb-10">
+      <TopBar back="/f" title="جولة الاستلام" sub={`${round.stops.length === 2 ? 'محطتين' : `${round.stops.length} محطات`} · ${dist.toFixed(1)} كم`} />
+      <div className="relative mx-4 aspect-[10/7] overflow-hidden rounded-[24px] ring-1 ring-ink/5">
         <CityMap neighborhoods={db.neighborhoods} className="h-full w-full">
-          <RouteLine points={pts} />
+          <RouteLine points={[f, ...laundries]} />
           {round.stops.map((s, i) => {
-            const l = byId(db.laundries, s.laundryId)!
+            const l = laundries[i]
+            const done = !!s.collectedAt
+            const now = i === current
             return (
               <g key={s.listingId}>
-                <circle cx={l.x} cy={l.y} r="20" fill={s.collectedAt ? '#0FA36B' : '#D9822B'} />
-                <text x={l.x} y={l.y + 6} textAnchor="middle" fontSize="17" fontWeight="700" fill="#fff">
-                  {i + 1}
+                {now && <circle cx={l.x} cy={l.y} r="44" fill="#0FA36B" opacity="0.25" style={{ transformOrigin: `${l.x}px ${l.y}px`, animation: 'pulse-ring 1.8s ease-out infinite' }} />}
+                <circle cx={l.x} cy={l.y} r="32" fill={done || now ? '#0FA36B' : '#0F1714'} stroke="#fff" strokeWidth="4" />
+                <text x={l.x} y={l.y + 10} textAnchor="middle" fontSize="28" fontWeight="700" fill="#fff" style={{ fontFamily: 'var(--font-display)' }}>
+                  {done ? '✓' : i + 1}
                 </text>
               </g>
             )
           })}
-          <rect x={f.x - 18} y={f.y - 18} width="36" height="36" rx="10" fill="#0F1714" />
+          <FactoryPin f={f} />
         </CityMap>
       </div>
-      <div className="mt-4 space-y-3 px-4">
-        {round.stops.map((s, i) => {
-          const l = byId(db.laundries, s.laundryId)!
-          const est = Math.round(kgFromHangers(s.count) * 10) / 10
-          const w = weights[s.listingId] ?? est
-          return (
-            <Card key={s.listingId} className={cx('p-4', !!s.collectedAt && 'bg-loop-50/60')}>
-              <div className="flex items-center gap-3">
-                <div className={cx('num grid h-9 w-9 place-items-center rounded-full font-bold text-white', s.collectedAt ? 'bg-loop' : 'bg-copper')}>{s.collectedAt ? <Icon name="check" size={18} strokeWidth={3} /> : i + 1}</div>
-                <div className="flex-1">
-                  <div className="font-semibold">{l.name}</div>
-                  <div className="num text-xs text-mute">
-                    {num(s.count)} علاقة · تقديري {kg(est)} كجم
-                  </div>
-                </div>
-                {s.collectedAt && (
-                  <Pill tone="loop" className="num">
-                    {sar(s.payoutSar!)} ر.س
-                  </Pill>
-                )}
-              </div>
-              {!s.collectedAt && (
-                <div className="mt-4 flex items-center gap-2">
-                  <div className="flex flex-1 items-center rounded-2xl bg-sand ring-1 ring-ink/10">
-                    <button className="grid h-12 w-12 place-items-center" onClick={() => setWeights((x) => ({ ...x, [s.listingId]: Math.max(0, Math.round((w - 0.1) * 10) / 10) }))}>
-                      <Icon name="minus" size={18} />
-                    </button>
-                    <input
-                      dir="ltr"
-                      inputMode="decimal"
-                      className="num w-full bg-transparent text-center text-lg font-semibold outline-none"
-                      value={w}
-                      onChange={(e) => setWeights((x) => ({ ...x, [s.listingId]: Number(e.target.value.replace(/[^\d.]/g, '')) || 0 }))}
-                    />
-                    <button className="grid h-12 w-12 place-items-center" onClick={() => setWeights((x) => ({ ...x, [s.listingId]: Math.round((w + 0.1) * 10) / 10 }))}>
-                      <Icon name="plus" size={18} />
-                    </button>
-                  </div>
-                  <span className="text-sm text-mute">كجم</span>
-                  <Button
-                    size="md"
-                    variant="ink"
-                    onClick={() => {
-                      collect(round.id, s.listingId, w)
-                      haptic(10)
-                    }}
-                  >
-                    استلمت
-                  </Button>
-                </div>
-              )}
-              {!s.collectedAt && (
-                <div className="mt-2 text-[11px] text-mute">
-                  تندفع للمغسلة: <span className="num font-semibold text-ink">{sar(w * f.pricePerKgSar)}</span> ر.س
-                </div>
-              )}
-            </Card>
-          )
-        })}
-        <AnimatePresence>
-          {cert && (
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-              <Card className="flex items-center gap-3 bg-ink p-4 text-white" onClick={() => nav(`/f/cert/${cert}`)}>
-                <div className="grid h-12 w-12 place-items-center rounded-xl bg-loop">
-                  <Icon name="cert" size={24} />
-                </div>
-                <div className="flex-1">
-                  <div className="font-semibold">صدرت شهادة التوريد</div>
-                  <div className="text-xs text-white/60">كل المغاسل انصرف لها مستحقها</div>
-                </div>
-                <Icon name="chevron" size={20} />
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        {!cert && <div className="text-center text-xs text-mute">{doneCount ? `باقي ${round.stops.length - doneCount} محطات` : 'أدخل الوزن الفعلي عند كل محطة'}</div>}
-      </div>
-    </div>
-  )
-}
 
-export function Rounds() {
-  const db = useStore((s) => s.db)
-  const nav = useNavigate()
-  const rounds = [...db.rounds].sort((a, b) => b.createdAt - a.createdAt)
-  return (
-    <div className="pb-8">
-      <TopBar title="الجولات" />
-      <div className="space-y-2.5 px-4">
-        {rounds.map((r) => {
-          const kgs = r.stops.reduce((a, s) => a + (s.actualKg ?? kgFromHangers(s.count)), 0)
-          return (
-            <Card key={r.id} className="flex items-center gap-3 p-4" onClick={() => nav(r.certificateId ? `/f/cert/${r.certificateId}` : `/f/round/${r.id}`)}>
-              <div className={cx('grid h-11 w-11 place-items-center rounded-xl', r.completedAt ? 'bg-loop-50 text-loop-700' : 'bg-copper-50 text-copper')}>
-                <Icon name={r.completedAt ? 'check' : 'truck'} size={20} />
-              </div>
+      <div className="mt-5 px-5">
+        <div className="font-display text-xl font-semibold">{cert ? 'اكتملت الجولة' : `المحطة ${num(current + 1)} من ${num(round.stops.length)}`}</div>
+        <div className="mt-0.5 text-sm text-mute">{cert ? 'كل مغسلة انصرف لها مستحقها حسب الوزن الفعلي.' : 'أكّد الوزن الفعلي عند كل مغسلة، وينصرف لها مبلغها مباشرة.'}</div>
+      </div>
+
+      <div className="relative mt-4 px-4">
+        <div className="absolute bottom-8 start-[38px] top-8 w-0.5 bg-ink/10" />
+        <div className="space-y-2.5">
+          {round.stops.map((s, i) => {
+            const l = laundries[i]
+            const est = Math.round(kgFromHangers(s.count) * 10) / 10
+            const w = weights[s.listingId] ?? est
+            const done = !!s.collectedAt
+            const isNow = i === current
+            const setW = (v: number) => setWeights((x) => ({ ...x, [s.listingId]: Math.max(0, Math.round(v * 10) / 10) }))
+            return (
+              <motion.div key={s.listingId} layout className={cx('relative rounded-[20px] ring-1', isNow ? 'bg-paper p-4 shadow-card ring-loop/40' : 'bg-paper/70 px-4 py-3 ring-ink/5')}>
+                <div className="flex items-center gap-3">
+                  <div className={cx('num relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-full font-bold text-white', done || isNow ? 'bg-loop' : 'bg-ink/80')}>{done ? <Icon name="check" size={18} strokeWidth={3} /> : i + 1}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-semibold">{l.name}</div>
+                    <div className="text-xs text-mute">
+                      {neighborhoodOf(db, l.neighborhoodId).name} · {done ? <span className="num">{kg(s.actualKg!)} كجم</span> : <span className="num">≈ {kg(est)} كجم</span>}
+                    </div>
+                  </div>
+                  {done && <span className="num shrink-0 text-sm font-semibold text-copper-700">+{sar(s.payoutSar!)} ر.س</span>}
+                </div>
+                <AnimatePresence initial={false}>
+                  {isNow && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="overflow-hidden">
+                      <div className="pt-4 text-xs font-semibold text-mute">الوزن على الميزان</div>
+                      <div className="mt-2 flex items-center rounded-2xl bg-sand ring-1 ring-ink/10">
+                        <button className="grid h-14 w-14 place-items-center" onClick={() => setW(w - 0.1)} aria-label="أنقص">
+                          <Icon name="minus" size={20} />
+                        </button>
+                        <input
+                          aria-label="الوزن بالكيلو"
+                          dir="ltr"
+                          inputMode="decimal"
+                          className="num w-full bg-transparent text-center text-2xl font-semibold outline-none"
+                          value={w}
+                          onChange={(e) => setWeights((x) => ({ ...x, [s.listingId]: Number(e.target.value.replace(/[^\d.]/g, '')) || 0 }))}
+                        />
+                        <span className="text-sm text-mute">كجم</span>
+                        <button className="grid h-14 w-14 place-items-center" onClick={() => setW(w + 0.1)} aria-label="زِد">
+                          <Icon name="plus" size={20} />
+                        </button>
+                      </div>
+                      <Button
+                        className="mt-3 w-full"
+                        icon="check"
+                        onClick={() => {
+                          collect(round.id, s.listingId, w)
+                          haptic(10)
+                        }}
+                      >
+                        أكّد الوزن
+                      </Button>
+                      <div className="mt-2 text-center text-xs text-mute">
+                        ينصرف لـ{l.short} <span className="num font-semibold text-copper-700">{sar(w * f.pricePerKgSar)}</span> ر.س
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )
+          })}
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {cert && (
+          <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="mx-4 mt-4 overflow-hidden rounded-[24px] bg-ink p-5 text-white">
+            <div className="flex items-center gap-3">
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-loop">
+                <Icon name="cert" size={24} />
+              </span>
               <div className="flex-1">
-                <div className="font-semibold">{date(r.createdAt)}</div>
-                <div className="num text-xs text-mute">
-                  {r.stops.length} محطات · {kg(kgs)} كجم
+                <div className="font-display text-lg font-semibold">صدرت شهادة التوريد</div>
+                <div className="text-xs text-white/60">
+                  انصرف للمغاسل <span className="num font-semibold text-copper-100">{sar(paid)}</span> ر.س
                 </div>
               </div>
-              <Pill tone={r.completedAt ? 'loop' : 'copper'}>{r.completedAt ? 'مكتملة' : 'جارية'}</Pill>
-            </Card>
-          )
-        })}
-      </div>
+            </div>
+            <Button className="mt-4 w-full" onClick={() => nav(`/f/cert/${cert}`)}>
+              شوف الشهادة
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {!cert && doneCount === 0 && <div className="mt-4 text-center text-xs text-mute">الترتيب محسوب لأقصر طريق من مصنعك</div>}
     </div>
   )
 }
@@ -356,24 +387,39 @@ export function Rounds() {
 export function FactorySettings() {
   const f = useFactory()
   const setPrice = useStore((s) => s.setPrice)
+  const step = (d: number) => setPrice(f.id, Math.max(0.1, Math.round((f.pricePerKgSar + d) * 100) / 100))
   return (
-    <div className="pb-8">
-      <TopBar title="الإعدادات" />
-      <div className="space-y-3 px-4">
-        <Card className="p-6 text-center">
-          <div className="text-sm text-mute">سعرك المعلن للمغاسل</div>
-          <div className="mt-4 flex items-center justify-center gap-4">
-            <button className="grid h-12 w-12 place-items-center rounded-full bg-sand" onClick={() => setPrice(f.id, Math.max(0.1, Math.round((f.pricePerKgSar - 0.05) * 100) / 100))}>
-              <Icon name="minus" />
-            </button>
-            <div className="num font-display text-5xl font-semibold">{sar(f.pricePerKgSar)}</div>
-            <button className="grid h-12 w-12 place-items-center rounded-full bg-sand" onClick={() => setPrice(f.id, Math.round((f.pricePerKgSar + 0.05) * 100) / 100)}>
-              <Icon name="plus" />
-            </button>
+    <div className="px-4 pb-10 pt-safe">
+      <Profile
+        avatar={
+          <div className="grid h-20 w-20 place-items-center rounded-[28px] bg-ink text-white">
+            <Icon name="factory" size={34} />
           </div>
-          <div className="mt-1 text-sm text-mute">ريال لكل كيلو</div>
-          <div className="mt-5 rounded-2xl bg-steel-50 p-3 text-xs leading-5 text-steel-700">السعر يطبّق على كل الصناديق الجديدة، ويندفع لكل مغسلة حسب الوزن الفعلي وقت الاستلام.</div>
-        </Card>
+        }
+        title={f.name}
+        sub="القصيم"
+      />
+      <Group title="سعر الشراء" note="يطبّق على كل الصناديق الجديدة، وينصرف لكل مغسلة حسب الوزن الفعلي وقت الاستلام.">
+        <div className="flex items-center gap-3 px-4 py-4">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-copper-50 text-copper-700">
+            <Icon name="scale" size={18} />
+          </span>
+          <span className="flex-1 text-[15px] font-medium">ريال لكل كيلو</span>
+          <button className="grid h-10 w-10 place-items-center rounded-full bg-sand" onClick={() => step(-0.05)} aria-label="أنقص السعر">
+            <Icon name="minus" size={18} />
+          </button>
+          <span data-testid="price" className="num w-14 text-center font-display text-2xl font-semibold text-copper-700">
+            {sar(f.pricePerKgSar)}
+          </span>
+          <button className="grid h-10 w-10 place-items-center rounded-full bg-sand" onClick={() => step(0.05)} aria-label="زِد السعر">
+            <Icon name="plus" size={18} />
+          </button>
+        </div>
+      </Group>
+      <Group title="الحساب">
+        <Row icon="user" label="البريد" value={<span dir="ltr">wadi@maad.sa</span>} />
+      </Group>
+      <div className="mt-6">
         <SwitchAccount />
       </div>
     </div>

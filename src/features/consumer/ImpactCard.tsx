@@ -4,7 +4,7 @@ import { useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { kgFromHangers } from '@/config/economics'
 import { byId, groupBookings, tierOf } from '@/domain/services'
-import { date, kg, num, TIER_LABEL } from '@/lib/format'
+import { date, num, TIER_LABEL } from '@/lib/format'
 import { useStore } from '@/store/store'
 import { Icon } from '@/ui/Icon'
 import { Button, Toast, TopBar } from '@/ui/kit'
@@ -22,7 +22,6 @@ export function ImpactCard() {
   const usable = legs.reduce((a, b) => a + b.usable, 0)
   const damaged = legs.reduce((a, b) => a + b.damaged, 0)
   const total = usable + damaged
-  const lifetime = user.lifetimeUsable + user.lifetimeDamaged
   const laundry = byId(db.laundries, legs.find((b) => b.usable)?.laundryId ?? legs[0].laundryId)!
   const hood = byId(db.neighborhoods, user.neighborhoodId)!
 
@@ -99,9 +98,7 @@ export function ImpactCard() {
                   </div>
                 </div>
                 <div className="mt-6 flex items-center justify-between border-t border-white/20 pt-4 text-xs text-white/80">
-                  <span>
-                    عضو {TIER_LABEL[tierOf(user)]} · <span className="num">{num(lifetime)}</span> علاقة ({kg(kgFromHangers(lifetime))} كجم)
-                  </span>
+                  <span>عضو {TIER_LABEL[tierOf(user)]} في مَعاد</span>
                   <span>حي {hood.name}</span>
                 </div>
               </div>

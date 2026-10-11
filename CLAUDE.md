@@ -15,13 +15,14 @@ Consumer
 - Usable hangers go in a green carton, damaged ones in a grey carton.
 - Delivery: drop off in person, or hand over with the next laundry order.
 - Receipt: booking details plus the user's single loyalty QR. Timeline: booked → awaiting drop-off → received → reward credited. Bookings expire after 48h and the quantity returns to the request.
-- No login at all (owner decision, polish pass): the app opens on an account-type picker (consumer, laundry, factory, plus an impact link). The last account is remembered; each role's settings has "switch account".
+- Entry (owner decision, final UX pass): first launch shows a welcome page (one line + three steps: scan, hand over, becomes steel) and "who are you?" (consumer, laundry, factory, plus an impact link). Then a frictionless simulated sign-in: consumer = phone + self-filling OTP (any number works) + pick a Buraydah neighborhood (nearby requests depend on it); laundry/factory = business sign-in with credentials prefilled. After that the app opens straight into the last role; each role's settings has "switch account". "Reset demo" brings the welcome page back, and demo story jumps bypass sign-in.
+- No personal demo name anywhere; greet by time of day.
 - No nearby requests: "notify me when a nearby laundry needs hangers".
 
 Rewards
 - Usable hangers earn laundry coupons. Damaged hangers earn fewer points. The laundry funds both.
 - Wallet: coupons with expiry dates, redeemed by the laundry scanning the QR.
-- Loyalty pass: tier (bronze/silver/gold), balance, personal impact, single QR for drop-offs and redemptions.
+- Loyalty pass: tier (bronze/silver/gold), balance and the single QR for drop-offs and redemptions. Personal impact (lifetime hangers, kg, points, next tier) lives in the return history (owner decision, final UX pass).
 - Shareable impact card after every return. Full return history. "Donate your points" with a trees counter (visual only).
 - Consumers never see per-hanger halala values, only points and coupons.
 

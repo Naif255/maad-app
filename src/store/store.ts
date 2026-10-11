@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { appConfig } from '@/config/app'
-import { buildSeed, DEMO_USER_ID } from '@/data/seed'
+import { buildSeed, DEMO_PHONE, DEMO_USER_ID } from '@/data/seed'
 import { statsFrom } from '@/domain/scoring'
 import * as svc from '@/domain/services'
 import type { Db, DeliveryMethod, Reward, ScanBatch } from '@/domain/types'
@@ -36,6 +36,7 @@ interface State {
   clockOffset: number
   userId: string
   account?: Account
+  signedIn: Account[]
   demo: boolean
   batches: ScanBatch[]
   scanRequestId?: string
@@ -46,6 +47,9 @@ interface State {
   now: () => number
   reset: () => void
   setAccount: (a?: Account) => void
+  signIn: (a: Account, profile?: { phone?: string; neighborhoodId?: string }) => void
+  ensureSession: (a: Account) => void
+  setNeighborhood: (id: string) => void
   toggleDemo: () => void
   addBatch: (b: ScanBatch) => void
   clearScan: () => void
@@ -81,6 +85,7 @@ export const useStore = create<State>()(
         db: buildSeed(seedNow()),
         clockOffset: 0,
         userId: DEMO_USER_ID,
+        signedIn: [],
         demo: initialDemo(),
         batches: [],
         scanSource: 'demo',
@@ -96,9 +101,21 @@ export const useStore = create<State>()(
             scanRequestId: undefined,
             celebration: undefined,
             hideNearby: false,
+            account: undefined,
+            signedIn: [],
             resetCount: s.resetCount + 1,
           })),
         setAccount: (account) => set({ account }),
+        signIn: (account, profile) => {
+          if (profile) mutate((db) => svc.setProfile(db, get().userId, profile))
+          set((s) => ({ account, signedIn: s.signedIn.includes(account) ? s.signedIn : [...s.signedIn, account] }))
+        },
+        ensureSession: (account) => {
+          if (get().signedIn.includes(account)) return
+          if (account === 'consumer') mutate((db) => svc.setProfile(db, get().userId, { phone: DEMO_PHONE }))
+          set((s) => ({ signedIn: [...s.signedIn, account] }))
+        },
+        setNeighborhood: (neighborhoodId) => mutate((db) => svc.setProfile(db, get().userId, { neighborhoodId })),
         toggleDemo: () => {
           const demo = !get().demo
           try {
@@ -165,6 +182,7 @@ export const useStore = create<State>()(
         clockOffset: s.clockOffset,
         userId: s.userId,
         account: s.account,
+        signedIn: s.signedIn,
         batches: s.batches,
         scanRequestId: s.scanRequestId,
         scanSource: s.scanSource,

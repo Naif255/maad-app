@@ -4,6 +4,7 @@ import { byId } from '@/domain/services'
 import { useStore } from '@/store/store'
 import { Icon, type IconName } from '@/ui/Icon'
 import { cx } from '@/ui/kit'
+import { useScrollReset } from '@/ui/useScrollReset'
 
 export const useLaundry = () => {
   const db = useStore((s) => s.db)
@@ -14,14 +15,15 @@ const TABS: { to: string; label: string; icon: IconName; end?: boolean }[] = [
   { to: '/l', label: 'اللوحة', icon: 'home', end: true },
   { to: '/l/new', label: 'طلب جديد', icon: 'plus' },
   { to: '/l/scan', label: 'امسح', icon: 'qr' },
-  { to: '/l/history', label: 'الاستلامات', icon: 'history' },
+  { to: '/l/history', label: 'السجل', icon: 'history' },
   { to: '/l/settings', label: 'الإعدادات', icon: 'settings' },
 ]
 
 export function LaundryLayout() {
+  const scrollRef = useScrollReset()
   return (
     <div className="flex h-full flex-col bg-[#F3F1EC]">
-      <div className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden no-scrollbar">
+      <div ref={scrollRef} id="l-scroll" className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden no-scrollbar">
         <Outlet />
       </div>
       <nav className="shrink-0 border-t border-ink/5 bg-paper/95 px-2 pb-[max(env(safe-area-inset-bottom),10px)] pt-1.5 backdrop-blur-xl">

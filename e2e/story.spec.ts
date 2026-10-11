@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-const shots = process.env.SHOTS ?? 'test-results/shots'
+const shots = process.env.SHOTS ?? 'test-results/story'
 const snap = async (page: Page, name: string) => {
   if (shots) await page.screenshot({ path: `${shots}/${name}.png` })
 }
@@ -53,7 +53,7 @@ test('demo story runs end to end', async ({ page }) => {
   await expect(page.getByText('رمزك الشخصي')).toBeVisible()
   await page.waitForTimeout(700)
   await snap(page, '07-receipt')
-  const code = (await page.locator('.font-display.text-xl.tracking-wide').first().innerText()).trim()
+  const code = (await page.getByTestId('booking-code').innerText()).trim()
 
   await page.getByRole('button', { name: 'المغسلة' }).first().click()
   await expect(page.getByText('لوحة المغسلة')).toBeVisible()
@@ -79,12 +79,13 @@ test('demo story runs end to end', async ({ page }) => {
   await expect(page.getByText('صناديق جاهزة للاستلام')).toBeVisible()
   await page.waitForTimeout(800)
   await snap(page, '13-factory')
-  await page.getByRole('button', { name: 'اعتمد جولة الاستلام' }).click()
-  await expect(page.getByText('جولة الاستلام')).toBeVisible()
+  await page.getByRole('button', { name: 'جهّز جولة الاستلام' }).click()
+  await expect(page.getByText('المحطة 1 من 3')).toBeVisible()
   await snap(page, '14-round')
   await expect(page.getByText('3 محطات', { exact: false }).first()).toBeVisible()
-  for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'استلمت', exact: true }).first().click()
-  await page.getByText('صدرت شهادة التوريد').click()
+  for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'أكّد الوزن' }).click()
+  await expect(page.getByText('صدرت شهادة التوريد')).toBeVisible()
+  await page.getByRole('button', { name: 'شوف الشهادة' }).click()
   await page.waitForTimeout(900)
   await snap(page, '15-certificate')
 

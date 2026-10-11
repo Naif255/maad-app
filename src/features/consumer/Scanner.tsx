@@ -163,9 +163,17 @@ export function Scanner() {
           <button onClick={() => nav(-1)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-black/40 backdrop-blur-md" aria-label="إغلاق">
             <Icon name="close" size={20} />
           </button>
-          <div className="flex min-w-0 flex-1 gap-1 rounded-full bg-black/40 p-1 backdrop-blur-md">
-            <Counter label="صالحة" value={usable} tone="loop" />
-            <Counter label="للتدوير" value={recyclable} tone="steel" />
+          <div className="flex h-11 min-w-0 flex-1 items-center gap-3 rounded-full bg-black/40 pe-4 ps-1.5 backdrop-blur-md">
+            <span className="flex h-8 items-center gap-1.5 rounded-full bg-white/10 px-3">
+              <motion.span key={confirmed} initial={{ scale: 1.2 }} animate={{ scale: 1 }}>
+                <Odometer value={confirmed} className="text-xl font-semibold leading-none" />
+              </motion.span>
+              <span className="text-xs font-semibold text-white/80">{confirmed >= 3 && confirmed <= 10 ? 'علاقات' : 'علاقة'}</span>
+            </span>
+            <span className="ms-auto flex items-center gap-3 text-xs font-semibold">
+              <Split label="صالحة" value={usable} tone="loop" />
+              <Split label="للتدوير" value={recyclable} tone="steel" />
+            </span>
           </div>
         </div>
         {prev.total > 0 && (
@@ -229,8 +237,15 @@ export function Scanner() {
                 <div className="font-display text-lg font-semibold">
                   {batches.length > 1 ? `المجموع ${hangers(prev.total + confirmed)}` : `تم فحص ${hangers(confirmed)}`}
                 </div>
-                <div className="text-xs text-white/55">
-                  <span className="num">{num(prev.usable + usable)}</span> صالحة · <span className="num">{num(prev.total + confirmed - prev.usable - usable)}</span> للتدوير · اضغط أي علاقة تشوف تقييمها
+                <div className="mt-0.5 flex items-center gap-3 text-[13px] text-white/70">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-loop" />
+                    <span className="num font-semibold text-white">{num(prev.usable + usable)}</span> صالحة
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-steel-300" />
+                    <span className="num font-semibold text-white">{num(prev.total + confirmed - prev.usable - usable)}</span> للتدوير
+                  </span>
                 </div>
               </div>
             </div>
@@ -249,7 +264,11 @@ export function Scanner() {
                 تصدير التعليقات (sample.json)
               </button>
             )}
-            <div className="mt-5 grid grid-cols-[1fr_1.4fr] gap-2.5">
+            <div className="mt-4 flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-xs text-white/55">
+              <Icon name="eye" size={15} className="shrink-0" />
+              اضغط أي علاقة فوق تشوف ليش انحسبت كذا
+            </div>
+            <div className="mt-4 grid grid-cols-[1fr_1.4fr] gap-2.5">
               <Button variant="soft" className="border-white/10 bg-white/5 text-white hover:bg-white/10" icon="plus" onClick={() => setAttempt((a) => a + 1)}>
                 دفعة ثانية
               </Button>
@@ -283,17 +302,13 @@ function useSize(ref: React.RefObject<HTMLDivElement | null>) {
   return s
 }
 
-function Counter({ label, value, tone }: { label: string; value: number; tone: 'loop' | 'steel' }) {
+function Split({ label, value, tone }: { label: string; value: number; tone: 'loop' | 'steel' }) {
   return (
-    <div className={cx('flex min-w-0 flex-1 items-center justify-between gap-2 rounded-full px-3 py-1.5', tone === 'loop' ? 'bg-loop/35' : 'bg-white/10')}>
-      <span className="flex items-center gap-1.5 truncate text-xs font-semibold">
-        <span className={cx('h-2 w-2 shrink-0 rounded-full', tone === 'loop' ? 'bg-loop' : 'bg-steel-300')} />
-        {label}
-      </span>
-      <motion.span key={value} initial={{ scale: 1.15 }} animate={{ scale: 1 }}>
-        <Odometer value={value} className="text-xl font-semibold leading-none" />
-      </motion.span>
-    </div>
+    <span className="flex items-center gap-1.5" aria-label={`${value} ${label}`}>
+      <span className={cx('h-2 w-2 shrink-0 rounded-full', tone === 'loop' ? 'bg-loop' : 'bg-steel-300')} />
+      <Odometer value={value} className="text-sm" />
+      <span className="text-white/60">{label}</span>
+    </span>
   )
 }
 

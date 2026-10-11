@@ -145,7 +145,7 @@ function Director() {
 
   const doReset = () => {
     reset()
-    nav('/c')
+    nav('/welcome')
     setFlash(true)
     setTimeout(() => setFlash(false), 900)
   }

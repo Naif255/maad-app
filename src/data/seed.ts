@@ -1,7 +1,7 @@
 import { economics } from '@/config/economics'
 import { statsFrom, verdict } from '@/domain/scoring'
 import { bookingCode, DAY, HOUR } from '@/domain/services'
-import type { Activity, Booking, Certificate, Coupon, Criteria, Db, HangerRequest, Laundry, Listing, PickupRound, User } from '@/domain/types'
+import type { Activity, Booking, Certificate, Coupon, Criteria, Db, HangerRequest, Laundry, Listing, Neighborhood, PickupRound, User } from '@/domain/types'
 
 export function mulberry32(seed: number) {
   let a = seed >>> 0
@@ -14,15 +14,15 @@ export function mulberry32(seed: number) {
   }
 }
 
-export const NEIGHBORHOODS = [
-  { id: 'n-safra', name: 'الصفراء', x: 540, y: 190 },
-  { id: 'n-fayziyah', name: 'الفايزية', x: 735, y: 300 },
-  { id: 'n-rayyan', name: 'الريان', x: 330, y: 250 },
-  { id: 'n-khaleej', name: 'الخليج', x: 790, y: 485 },
-  { id: 'n-nahda', name: 'النهضة', x: 545, y: 380 },
-  { id: 'n-iskan', name: 'الإسكان', x: 300, y: 470 },
-  { id: 'n-shammas', name: 'الشماس', x: 165, y: 330 },
-  { id: 'n-salmiya', name: 'السالمية', x: 570, y: 565 },
+export const NEIGHBORHOODS: Neighborhood[] = [
+  { id: 'n-safra', name: 'الصفراء', area: 'north', x: 540, y: 190 },
+  { id: 'n-fayziyah', name: 'الفايزية', area: 'north', x: 735, y: 300 },
+  { id: 'n-rayyan', name: 'الريان', area: 'north', x: 330, y: 250 },
+  { id: 'n-khaleej', name: 'الخليج', area: 'south', x: 790, y: 485 },
+  { id: 'n-nahda', name: 'النهضة', area: 'center', x: 545, y: 380 },
+  { id: 'n-iskan', name: 'الإسكان', area: 'south', x: 300, y: 470 },
+  { id: 'n-shammas', name: 'الشماس', area: 'center', x: 165, y: 330 },
+  { id: 'n-salmiya', name: 'السالمية', area: 'south', x: 570, y: 565 },
 ]
 
 const LAUNDRIES: Omit<Laundry, 'scrapEarningsSar'>[] = [
@@ -37,6 +37,7 @@ const LAUNDRIES: Omit<Laundry, 'scrapEarningsSar'>[] = [
 ]
 
 export const DEMO_USER_ID = 'u-demo'
+export const DEMO_PHONE = '0551234567'
 export const DEMO_LAUNDRY_ID = 'l-nada'
 export const DEMO_FACTORY_ID = 'f-wadi'
 export const DEMO_REQUEST_ID = 'r-nada'
@@ -86,8 +87,8 @@ export function buildSeed(now: number = Date.now()): Db {
   const users: User[] = [
     {
       id: DEMO_USER_ID,
-      name: 'ريم',
-      phone: '0551234567',
+      name: '',
+      phone: '',
       neighborhoodId: 'n-safra',
       points: 0,
       lifetimeUsable: 0,

@@ -3,7 +3,7 @@
 ## Setup A: one laptop (primary)
 
 1. `npm run dev`, open `http://localhost:5173/?demo=1#/c` in Chrome at full screen (≥1100px wide shows stage mode). Without `?demo=1` the app runs as the plain product; Shift+D toggles demo controls at any time.
-2. Press **إعادة العرض** (or Shift+R). Every run starts from the same data and ends with the same numbers.
+2. Press **إعادة العرض** (or Shift+R). Every run starts from the same data and ends with the same numbers. Reset returns to the welcome page; any story chip or top-bar role jumps straight in, skipping sign-in.
 3. Make sure **فيديو العرض** is selected (top bar). Use **الكاميرا** only if you want to scan real hangers live.
 
 The phone frame is on the right, and the live Impact panel on the left reacts to every step.
@@ -21,16 +21,18 @@ The phone frame is on the right, and the live Impact panel on the left reacts to
 | 1 | 0:00 | Consumer home, top card **مغسلة نَدى** (140 من 200) | "Nearby laundries post what they need. Nada needs 48 more hangers and pays in free ironing." |
 | 2 | 0:15 | **افحص علاقاتك** | "Live video, not photos. Every hanger gets a box and a score out of 100 on five criteria." |
 | 3 | 0:30 | Wait for the lock (≈8s), tap a grey box | "It locks itself when the count is stable. Tap any hanger: this one has a broken hook, so it goes to steel." Plastic hangers in the scene are silently ignored. |
-| 4 | 0:45 | **كمّل للفرز** → **احجز التسليم** → **أسلّمها بنفسي** → **ثبّت الحجز** | "14 in the green carton for the laundry, 6 in the grey one for the factory. No forms, no login." |
+| 4 | 0:45 | **كمّل للفرز** → **احجز التسليم** → **أسلّمها بنفسي** → **ثبّت الحجز** | "14 in the green carton for the laundry, 6 in the grey one for the factory. No forms." |
 | 5 | 1:00 | Receipt | "One personal QR for everything. 48 hours, then the quantity goes back to the laundry." |
 | 6 | 1:10 | Top bar **المغسلة** → center tab **امسح** → pick the booking → **استلمت** | "Staff don't sort. Keep green, drop grey in the Maad box. The box just filled, so it went to factories automatically." |
 | 7 | 1:25 | Top bar **المستهلك** | Reward lands: coupon + points. **شوف بطاقة أثرك** for the share card. |
-| 8 | 1:35 | Top bar **المصنع** → **اعتمد جولة الاستلام** → **استلمت** ×3 → certificate | "One round, three nearby boxes, each laundry paid by actual weight. Every shipment gets a supply certificate with purity from scan data." |
+| 8 | 1:35 | Top bar **المصنع** → **جهّز جولة الاستلام** → **أكّد الوزن** ×3 → **شوف الشهادة** | "One round, three nearby boxes, each laundry paid by actual weight. Every shipment gets a supply certificate with purity from scan data." |
 | 9 | 1:55 | Top bar **الأثر** | "Everything you just saw, counted live, by neighborhood." |
 
 Story chips 1–7 in the top bar jump straight to any step if you need to skip.
 
 ## Extra moments if asked
+
+- **First launch**: after **إعادة العرض** the welcome page shows. Tap **عندي علاقات في البيت** → **أرسل الرمز** (the code fills itself) → pick a neighborhood → **يلا نبدأ**. Laundry and factory sign-ins are one tap (**دخول**).
 
 - **Expiry**: after booking, press **48 ساعة**. The receipt flips to expired and Nada's need goes back up.
 - **No nearby requests**: the bell button in the top bar shows the "notify me" state.

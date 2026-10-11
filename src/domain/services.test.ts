@@ -59,4 +59,50 @@ describe('demo story', () => {
     svc.expireBookings(db, NOW + 49 * svc.HOUR)
     expect(svc.remainingFor(db, svc.byId(db.requests, DEMO_REQUEST_ID)!)).toBe(before + 12)
   })
+
+  it('orders a pickup round as the shortest hop-by-hop route from the factory', () => {
+    const db = buildSeed(NOW)
+    const from = svc.neighborhoodOf(db, 'n-safra')
+    const damaged = Array.from({ length: 6 }, (_, i) => verdict(`d${i}`, { straightness: 30, hook: 92, rust: 88, coating: 70, breaks: 100 }, 0.97))
+    const group = svc.createBookings(db, DEMO_USER_ID, svc.planReturn(db, from, 0, 6, DEMO_REQUEST_ID), 'dropoff', statsFrom(damaged), NOW)
+    svc.receiveBooking(db, svc.groupBookings(db, group)[0].id, false, NOW)
+    const f = svc.byId(db.factories, DEMO_FACTORY_ID)!
+    const ids = svc.proposeRound(db, DEMO_FACTORY_ID)
+    const stops = ids.map((id) => svc.byId(db.laundries, svc.byId(db.listings, id)!.laundryId)!)
+    expect(stops.map((l) => l.id)).toEqual(['l-rifq', 'l-dana', 'l-nada'])
+    let at: { x: number; y: number } = f
+    for (const s of stops) {
+      const rest = stops.slice(stops.indexOf(s))
+      expect(Math.min(...rest.map((r) => svc.distanceKm(at, r)))).toBe(svc.distanceKm(at, s))
+      at = s
+    }
+  })
+
+  it('describes the laundry box in states', () => {
+    const db = buildSeed(NOW)
+    const l = svc.byId(db.laundries, DEMO_LAUNDRY_ID)!
+    expect(svc.boxState(db, l)).toBe('almost')
+    l.boxCount = 120
+    expect(svc.boxState(db, l)).toBe('collecting')
+    expect(svc.boxState(db, svc.byId(db.laundries, 'l-rifq')!)).toBe('listed')
+    expect(svc.boxState(db, svc.byId(db.laundries, 'l-taif')!)).toBe('off')
+  })
+
+  it('groups ready boxes by area and keeps payouts consistent with laundry earnings', () => {
+    const db = buildSeed(NOW)
+    expect(svc.readyByArea(db).map((g) => g.area)).toEqual(['center', 'south'])
+    for (const l of db.laundries) {
+      const sum = svc.scrapPayouts(db, l.id).reduce((a, p) => a + (p.payoutSar ?? 0), 0)
+      expect(Math.abs(sum - l.scrapEarningsSar)).toBeLessThan(0.001)
+    }
+  })
+
+  it('stores the signed-in phone and neighborhood on the profile', () => {
+    const db = buildSeed(NOW)
+    svc.setProfile(db, DEMO_USER_ID, { phone: '0500000000', neighborhoodId: 'n-khaleej' })
+    const u = svc.byId(db.users, DEMO_USER_ID)!
+    expect(u.phone).toBe('0500000000')
+    expect(u.neighborhoodId).toBe('n-khaleej')
+    expect(u.name).toBe('')
+  })
 })

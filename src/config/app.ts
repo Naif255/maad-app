@@ -19,5 +19,5 @@ export const appConfig = {
     breakCap: { below: 50, maxScore: 55 },
     hookCap: { below: 40, maxScore: 60 },
   },
-  storageKey: 'maad-db-v2',
+  storageKey: 'maad-db-v3',
 }

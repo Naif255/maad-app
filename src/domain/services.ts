@@ -303,7 +303,71 @@ export function proposeRound(db: Db, factoryId: string, radiusKm = 9) {
     .sort((a, b) => distanceKm(f, a.l) - distanceKm(f, b.l))
   if (!ready.length) return []
   const anchor = ready[0].l
-  return ready.filter((r) => distanceKm(anchor, r.l) <= radiusKm).map((r) => r.li.id)
+  const near = ready.filter((r) => distanceKm(anchor, r.l) <= radiusKm)
+  const route: typeof near = []
+  let at: { x: number; y: number } = f
+  while (near.length) {
+    near.sort((a, b) => distanceKm(at, a.l) - distanceKm(at, b.l))
+    const next = near.shift()!
+    route.push(next)
+    at = next.l
+  }
+  return route.map((r) => r.li.id)
+}
+
+export function routeKm(points: { x: number; y: number }[]) {
+  let d = 0
+  for (let i = 1; i < points.length; i++) d += distanceKm(points[i - 1], points[i])
+  return d
+}
+
+export function activeRound(db: Db, factoryId: string) {
+  return db.rounds.find((r) => r.factoryId === factoryId && !r.completedAt)
+}
+
+export function lastRound(db: Db, factoryId: string) {
+  return [...db.rounds].filter((r) => r.factoryId === factoryId).sort((a, b) => b.createdAt - a.createdAt)[0]
+}
+
+export function readyByArea(db: Db) {
+  const groups = new Map<string, { listing: Listing; laundry: Laundry }[]>()
+  for (const listing of readyListings(db)) {
+    const laundry = byId(db.laundries, listing.laundryId)!
+    const area = neighborhoodOf(db, laundry.neighborhoodId).area
+    groups.set(area, [...(groups.get(area) ?? []), { listing, laundry }])
+  }
+  const order = ['north', 'center', 'south']
+  return [...groups.entries()].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0])).map(([area, items]) => ({ area, items }))
+}
+
+export type BoxState = 'off' | 'collecting' | 'almost' | 'listed' | 'scheduled'
+
+export function boxState(db: Db, l: Laundry): BoxState {
+  if (!l.acceptsDamaged && l.boxCount === 0) return 'off'
+  const listing = activeListing(db, l.id)
+  if (listing?.status === 'scheduled') return 'scheduled'
+  if (boxIsFull(l)) return 'listed'
+  if (l.boxCount >= economics.boxCapacityHangers * 0.85) return 'almost'
+  return 'collecting'
+}
+
+export function scrapPayouts(db: Db, laundryId: string) {
+  return db.rounds
+    .flatMap((r) =>
+      r.stops
+        .filter((s) => s.laundryId === laundryId && s.collectedAt)
+        .map((s) => ({ ...s, roundId: r.id, factoryId: r.factoryId, certificateId: r.certificateId })),
+    )
+    .sort((a, b) => b.collectedAt! - a.collectedAt!)
+}
+
+export function nearbyRequestCount(db: Db, neighborhoodId: string, radiusKm: number) {
+  return requestViews(db, neighborhoodOf(db, neighborhoodId), radiusKm).length
+}
+
+export function setProfile(db: Db, userId: string, patch: Partial<Pick<User, 'phone' | 'neighborhoodId'>>) {
+  const u = byId(db.users, userId)
+  if (u) Object.assign(u, patch)
 }
 
 export function approveRound(db: Db, factoryId: string, listingIds: string[], now: number) {

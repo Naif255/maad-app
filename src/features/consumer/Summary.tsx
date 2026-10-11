@@ -1,7 +1,6 @@
 import { motion } from 'motion/react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { economics } from '@/config/economics'
 import { byId, distanceKm, planReturn, pointsFor, requestViews } from '@/domain/services'
 import type { DeliveryMethod } from '@/domain/types'
 import { hangers, num, rewardTitle } from '@/lib/format'
@@ -57,12 +56,12 @@ export function Summary() {
   }
 
   return (
-    <div className="min-h-full bg-sand">
+    <div className="flex min-h-full flex-col bg-sand">
       <TopBar back title="رتّبها في كرتونين" sub={`${hangers(all.length)} من ${batches.length > 1 ? `${batches.length} دفعات` : 'دفعة وحدة'}`} />
       <div className="px-4 pb-4">
         <div className="grid grid-cols-2 gap-3">
-          <CartonCard tone="green" count={usable} title="الكرتون الأخضر" sub="الصالحة · ترجع للمغسلة" />
-          <CartonCard tone="grey" count={damaged} title="الكرتون الرمادي" sub="التالفة · تصير حديد من جديد" delay={0.12} />
+          <CartonCard tone="green" count={usable} title="الكرتون الأخضر" sub="ترجع للمغسلة" />
+          <CartonCard tone="grey" count={damaged} title="الكرتون الرمادي" sub="تصير حديد من جديد" delay={0.12} />
         </div>
 
         <div className="mb-3 mt-7 px-1 font-display text-[17px] font-semibold">وين تروح؟</div>
@@ -101,7 +100,7 @@ export function Summary() {
           })}
           {plan.leftoverUsable > 0 && (
             <div className="flex gap-3 rounded-2xl bg-paper p-4 text-sm leading-6 text-mute ring-1 ring-ink/5">
-              <Icon name="bell" size={20} className="shrink-0 text-copper" />
+              <Icon name="bell" size={20} className="shrink-0 text-mute" />
               <span>
                 باقي عندك <b className="text-ink">{hangers(plan.leftoverUsable)} صالحة</b> ما تحتاجها المغاسل القريبة الحين. خلّها عندك، ونعلمك أول ما يطلبها أحد.
               </span>
@@ -130,33 +129,20 @@ export function Summary() {
           </>
         )}
 
-        <Card className="mt-7 overflow-hidden">
-          <div className="flex items-center gap-2 border-b border-ink/5 px-4 py-3 text-sm font-semibold">
-            <Icon name="gift" size={18} className="text-copper" />
-            بتحصل بعد التسليم
-          </div>
-          <div className="flex items-center gap-3 px-4 py-4">
-            <div className="min-w-0 flex-1 space-y-1.5">
-              {coupons.map((c) => (
-                <div key={c.title} className="text-sm">
-                  <span className="num font-semibold">{c.n}×</span> كوبون {c.title}
-                </div>
-              ))}
-              {!coupons.length && plan.legs.some((l) => l.usable) && <div className="text-sm text-mute">تقرّبك من كوبونك الجاي</div>}
-              <div className="text-sm">
-                <span className="num font-semibold text-copper-700">+{num(pts)}</span> نقطة
-              </div>
-            </div>
-            <div className="text-[11px] leading-4 text-mute">
-              {economics.usablePointsPerHanger} للصالحة
-              <br />
-              {economics.damagedPointsPerHanger} للتالفة
+        <div className="mt-6 flex items-center gap-3 rounded-2xl bg-copper-50 px-4 py-3.5">
+          <Icon name="gift" size={22} className="shrink-0 text-copper" />
+          <div className="min-w-0 flex-1 text-sm leading-6 text-copper-700">
+            <div className="text-xs text-copper-700/75">بعد ما تسلّمها بتحصل</div>
+            <div className="font-semibold">
+              {coupons.map((c) => `${c.n > 1 ? `${c.n} كوبونات` : 'كوبون'} ${c.title}`).join(' و')}
+              {coupons.length ? ' + ' : ''}
+              <span className="num">{num(pts)}</span> نقطة
             </div>
           </div>
-        </Card>
+        </div>
       </div>
 
-      <div className="sticky bottom-0 z-20 bg-gradient-to-t from-sand via-sand to-transparent px-4 pb-6 pt-6">
+      <div className="sticky bottom-0 z-20 mt-auto bg-gradient-to-t from-sand via-sand to-transparent px-4 pb-6 pt-6">
         <Button className="w-full" disabled={!plan.legs.length} onClick={() => setMethod(true)}>
           احجز التسليم
         </Button>

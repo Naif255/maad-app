@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Icon, type IconName } from '@/ui/Icon'
 import { cx } from '@/ui/kit'
 import { RewardLanded } from './RewardLanded'
+import { useScrollReset } from '@/ui/useScrollReset'
 
 const TABS: { to: string; label: string; icon: IconName; end?: boolean }[] = [
   { to: '/c', label: 'الرئيسية', icon: 'home', end: true },
@@ -13,11 +14,12 @@ const TABS: { to: string; label: string; icon: IconName; end?: boolean }[] = [
 ]
 
 export function ConsumerLayout() {
+  const scrollRef = useScrollReset()
   const loc = useLocation()
   const hideTabs = /^\/c\/(scan|summary|book|receipt|reward|request)/.test(loc.pathname)
   return (
     <div className="flex h-full flex-col">
-      <div id="c-scroll" className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden no-scrollbar">
+      <div ref={scrollRef} id="c-scroll" className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden no-scrollbar">
         <Outlet />
       </div>
       {!hideTabs && <TabBar />}

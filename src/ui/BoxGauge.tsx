@@ -6,7 +6,7 @@ export function BoxGauge({ ratio, size = 132, full }: { ratio: number; size?: nu
   const top = 30
   const bottom = 104
   const level = bottom - r * (bottom - top)
-  const stroke = full ? '#D9822B' : '#0F1714'
+  const stroke = full ? '#4E5A65' : '#0F1714'
   return (
     <svg width={size} height={size} viewBox="0 0 120 120">
       <defs>

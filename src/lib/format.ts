@@ -103,3 +103,55 @@ export const DEFECT_LABEL = {
   coating: 'طلاء مقشّر',
   breaks: 'كسر في السلك',
 } as const
+
+export const AREA_LABEL = { north: 'شمال بريدة', center: 'وسط بريدة', south: 'جنوب بريدة' } as const
+
+export function greeting(t: number) {
+  const h = new Date(t).getHours()
+  if (h >= 4 && h < 12) return 'صباح الخير'
+  return 'مساء الخير'
+}
+
+const dayStart = (t: number) => {
+  const d = new Date(t)
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+}
+
+export function dayLabel(t: number, now: number) {
+  const diff = Math.round((dayStart(now) - dayStart(t)) / 86400000)
+  if (diff === 0) return 'اليوم'
+  if (diff === 1) return 'أمس'
+  if (diff < 7) return weekday(t)
+  return `${weekday(t)}، ${date(t)}`
+}
+
+export function groupByDay<T>(items: T[], at: (x: T) => number, now: number) {
+  const out: { key: number; label: string; items: T[] }[] = []
+  for (const x of items) {
+    const key = dayStart(at(x))
+    const last = out[out.length - 1]
+    if (last && last.key === key) last.items.push(x)
+    else out.push({ key, label: dayLabel(at(x), now), items: [x] })
+  }
+  return out
+}
+
+export function phone(p: string) {
+  const d = p.replace(/\D/g, '')
+  if (d.length !== 10) return p
+  return `${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6)}`
+}
+
+export function deadline(t: number, now: number) {
+  const day = dayStart(t) === dayStart(now) ? 'اليوم' : dayStart(t) - dayStart(now) === 86400000 ? 'بكرة' : weekday(t)
+  return `${day} ${time(t)}`
+}
+
+export function hoursLeft(ms: number) {
+  const h = Math.floor(ms / 3600000)
+  if (h >= 3 && h <= 10) return `${h} ساعات`
+  if (h === 2) return 'ساعتين'
+  if (h === 1) return 'ساعة'
+  if (h < 1) return `${Math.max(1, Math.floor(ms / 60000))} دقيقة`
+  return `${h} ساعة`
+}
